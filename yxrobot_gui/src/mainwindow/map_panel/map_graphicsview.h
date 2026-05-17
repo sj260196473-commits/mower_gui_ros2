@@ -5,8 +5,7 @@
 #include "mainwindow/map_panel/costmap_layerItem.h"
 #include "mainwindow/map_panel/robotpose_layerItem.h"
 #include "mainwindow/map_panel/laser_layeritem.h"
-#include "channel/ros2/rclcomm.h"
-
+#include "channel/virtual_channel.h"
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QScrollBar>
@@ -17,6 +16,7 @@ class MapGraphicsView: public QGraphicsView
     Q_OBJECT
 public:
     MapGraphicsView(QWidget* parent = nullptr);
+    void setCommChannel(VirtualChannel* channel);
 
 protected:
     // 重写鼠标与滚轮事件
@@ -32,8 +32,6 @@ private slots:
     void updateMap(const OccupancyMap& map);
 
 private:
-    std::shared_ptr<rclcomm> rclcomm_;
-
     QGraphicsScene* m_qGraphicScene;
     OccMapItem* m_occMapItem;
     CostMapItem* m_globalCostMapItem;

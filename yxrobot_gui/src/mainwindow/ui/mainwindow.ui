@@ -289,7 +289,7 @@
   <customwidget>
    <class>MapGraphicsView</class>
    <extends>QGraphicsView</extends>
-   <header>mapgraphicsview.h</header>
+   <header>mainwindow/map_panel/map_graphicsview.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

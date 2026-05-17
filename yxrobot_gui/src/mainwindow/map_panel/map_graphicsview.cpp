@@ -2,8 +2,7 @@
 #include <QPainter>
 
 MapGraphicsView::MapGraphicsView(QWidget* parent) :
-    QGraphicsView(parent),
-    rclcomm_(std::make_shared<rclcomm>())
+    QGraphicsView(parent)
 {
     //初始化地图场景类
     m_qGraphicScene = new QGraphicsScene();
@@ -32,12 +31,21 @@ MapGraphicsView::MapGraphicsView(QWidget* parent) :
     this->setRenderHint(QPainter::Antialiasing);                     // 开启抗锯齿，让轨迹和机器人更平滑
     // this->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);  // 滚轮缩放以鼠标为中心
 
-    connect(rclcomm_.get(),&rclcomm::emitUpdateMap,m_occMapItem,&OccMapItem::updateMap);
-    connect(rclcomm_.get(),&rclcomm::emitUpdateMap,m_robotPoseItem,&RobotPoseItem::updateMap);
-    connect(rclcomm_.get(),&rclcomm::emitUpdateMap,this,&MapGraphicsView::updateMap);
-    connect(rclcomm_.get(),&rclcomm::emitUpdateGlobalCostMap,m_globalCostMapItem,&CostMapItem::updateMap);
-    connect(rclcomm_.get(),&rclcomm::emitUpdateRobotPose,m_robotPoseItem,&RobotPoseItem::updatePose);
-    connect(rclcomm_.get(),&rclcomm::emitUpdateLaserScan,m_laserScanItem,&LaserItem::UpdateLaserData);
+
+}
+
+void MapGraphicsView::setCommChannel(VirtualChannel* channel)
+{
+    if (channel == nullptr) {
+        return;
+    }
+
+    connect(channel,&VirtualChannel::emitUpdateMap,m_occMapItem,&OccMapItem::updateMap);
+    connect(channel,&VirtualChannel::emitUpdateMap,m_robotPoseItem,&RobotPoseItem::updateMap);
+    connect(channel,&VirtualChannel::emitUpdateMap,this,&MapGraphicsView::updateMap);
+    connect(channel,&VirtualChannel::emitUpdateGlobalCostMap,m_globalCostMapItem,&CostMapItem::updateMap);
+    connect(channel,&VirtualChannel::emitUpdateRobotPose,m_robotPoseItem,&RobotPoseItem::updatePose);
+    connect(channel,&VirtualChannel::emitUpdateLaserScan,m_laserScanItem,&LaserItem::UpdateLaserData);
 }
 
 void MapGraphicsView::updateMap(const OccupancyMap& map)
@@ -142,11 +150,6 @@ void MapGraphicsView::wheelEvent(QWheelEvent *event)
     QPointF viewBL = this->mapToScene(viewportRect.bottomLeft());
     QPointF viewBR = this->mapToScene(viewportRect.bottomRight());
 
-    // ==========================================
-    // 🎯 激光图层 (boundingRect) 的四个角坐标获取
-    // ==========================================
-    // 假设你在 View 中有 m_laserItem 的指针，获取它在全局世界里的结界框
-    // (如果你想看 OccMapItem，替换成 m_occMapItem 即可)
     QRectF itemRect = m_laserScanItem->sceneBoundingRect();
 
     QPointF itemTL = itemRect.topLeft();
@@ -154,19 +157,5 @@ void MapGraphicsView::wheelEvent(QWheelEvent *event)
     QPointF itemBL = itemRect.bottomLeft();
     QPointF itemBR = itemRect.bottomRight();
 
-    // ==========================================
-    // 🖨️ 格式化打印输出
-    // ==========================================
-    qDebug() << "================= 坐标四角 Debug =================";
-    qDebug() << "[ 屏幕视角 (View) 在世界中的范围 ]:";
-    qDebug() << "左上角:" << viewTL << " | " << "右上角:" << viewTR;
-    qDebug() << "左下角:" << viewBL << " | " << "右下角:" << viewBR;
-    qDebug() << "--------------------------------------------------";
-    qDebug() << "[ 图层结界 (boundingRect) 的范围 ]:";
-    qDebug() << "左上角:" << itemTL << " | " << "右上角:" << itemTR;
-    qDebug() << "左下角:" << itemBL << " | " << "右下角:" << itemBR;
-    qDebug() << "==================================================\n";
-
     QGraphicsView::wheelEvent(event);
 }
-

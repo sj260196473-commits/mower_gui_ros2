@@ -13,10 +13,10 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2/LinearMath/Quaternion.h"
 
-#include "common/common.h"
+#include "channel/virtual_channel.h"
 
 
-class rclcomm:public QObject
+class rclcomm:public VirtualChannel
 {
     Q_OBJECT
 public:
@@ -24,8 +24,7 @@ public:
     ~rclcomm();
     bool Start();
     void Process();
-    bool Init();
-    void ShutDown();
+    bool Stop();
 
 private:
     void map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
@@ -33,20 +32,9 @@ private:
     void globalCostMapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg);
     void getRobotPose();
-
     RobotPose getTransform(const std::string& from,const std::string& to);
 
-signals:
-    void emitUpdateMap(const OccupancyMap& map);
-    void emitUpdateGlobalCostMap(const OccupancyMap& map);
-    void emitUpdateRobotPose(RobotPose pose);
-    void emitUpdateLaserScan(const LaserScan& scan);
-
 private:
-    std::thread process_thread_;
-    std::atomic<bool> run_flag_{false};
-    int loop_rate_{30};
-
     rclcpp::executors::MultiThreadedExecutor::SharedPtr executor_;
     std::shared_ptr<rclcpp::Node> node_;
     rclcpp::CallbackGroup::SharedPtr callback_group_laser_;

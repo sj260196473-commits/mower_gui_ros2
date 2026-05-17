@@ -2,8 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QGraphicsItem>
-#include "channel/ros2/rclcomm.h"
+#include "channel/channel_manager.h"
 #include "common/common.h"
 
 QT_BEGIN_NAMESPACE
@@ -24,7 +23,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-
+    std::unique_ptr<ChannelManager> channelManager_;
 
     int m_hideLeftIndex = 0;
     int m_hideRightIndex = 0;

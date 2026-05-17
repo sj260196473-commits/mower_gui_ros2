@@ -31,7 +31,6 @@ void LaserItem::computeBoundRect(const std::map<int, std::vector<Point>> &laser_
 
     for (const auto& [id, points] : laser_scan) {
         for (const auto& p : points) {
-            // 【核心修复】：如果坐标是无穷大 (inf) 或非数字 (nan)，直接跳过！
             if (!std::isfinite(p.x) || !std::isfinite(p.y)) {
                 continue;
             }

@@ -66,31 +66,10 @@ void rclcomm::Process()
     }
 }
 
-bool rclcomm::Init()
+bool rclcomm::Stop()
 {
-    if(Start())
-    {
-        std::cout<<"start ros2 channel success"<<std::endl;
-        run_flag_ = true;
-        process_thread_ = std::thread([this]()
-        {
-            while(run_flag_)
-            {
-                Process();
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000/loop_rate_));
-            }
-        });
-        return true;
-    }
-
-    return false;
-}
-
-void rclcomm::ShutDown()
-{
-    run_flag_ = false;
     rclcpp::shutdown();
-    process_thread_.join();
+    return true;
 }
 
 void rclcomm::map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
