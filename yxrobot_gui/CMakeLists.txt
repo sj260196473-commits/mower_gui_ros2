@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.8)
 project(yxrobot_gui)
 
-set(CHANNEL_OPTION "ros2" CACHE STRING "Communication channel to build: none or ros2")
-set_property(CACHE CHANNEL_OPTION PROPERTY STRINGS none ros2)
+# 选择通信通道：none 或 ros2 暂时写死
+# set(CHANNEL_OPTION "none" CACHE STRING "Communication channel to build: none or ros2")
+# set_property(CACHE CHANNEL_OPTION PROPERTY STRINGS none ros2)
+set(CHANNEL_OPTION "ros2")
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -24,7 +26,7 @@ set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/src/mainwindow/ui)
 find_package(Qt5 REQUIRED COMPONENTS Core Widgets Multimedia MultimediaWidgets)
 find_package(Qt5 REQUIRED COMPONENTS Core)
 
-set(PRO_FORM_DIR
+set(UI_DIR
   src/mainwindow/ui/mainwindow.ui
 )
 
@@ -60,7 +62,7 @@ set(PRO_SOURCES_DIR
   src/mainwindow/map_panel/robotpose_layerItem.cpp
 )
 
-qt5_wrap_ui(QT_UI_HPP ${PRO_FORM_DIR})
+qt5_wrap_ui(QT_UI_HPP ${UI_DIR})
 qt5_wrap_cpp(QT_MOC_HPP ${PRO_INCLUDE_DIR})
 qt5_add_resources(QT_RESOURCES_CPP ${PRO_RESOURCES_DIR})
 
@@ -69,14 +71,12 @@ add_executable(${PROJECT_NAME}
   ${QT_RESOURCES_CPP}
   ${PRO_INCLUDE_DIR}
   ${QT_MOC_HPP}
-  ${PRO_FORM_DIR}
+  ${QT_UI_HPP}
 )
 
 target_link_libraries(${PROJECT_NAME}
   Qt5::Core
   Qt5::Widgets
-  Qt5::Multimedia
-  Qt5::MultimediaWidgets
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -86,9 +86,15 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+  YX_CHANNEL_OPTION="${CHANNEL_OPTION}"
+)
+
+if(NOT CHANNEL_OPTION STREQUAL "none" AND NOT CHANNEL_OPTION STREQUAL "ros2")
+  message(FATAL_ERROR "Unsupported CHANNEL_OPTION='${CHANNEL_OPTION}'. Expected 'none' or 'ros2'.")
+endif()
+
 if(CHANNEL_OPTION STREQUAL "ros2")
   add_subdirectory(src/channel/ros2)
 endif()
-
-
 
