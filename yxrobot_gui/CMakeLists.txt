@@ -47,6 +47,7 @@ set(PRO_INCLUDE_DIR
   src/mainwindow/map_panel/map_layeritem_virtual.h
   src/mainwindow/map_panel/occmap_layerItem.h
   src/mainwindow/map_panel/robotpose_layerItem.h
+  src/mainwindow/map_panel/path_layerItem.h
 )
 
 set(PRO_SOURCES_DIR
@@ -60,6 +61,7 @@ set(PRO_SOURCES_DIR
   src/mainwindow/map_panel/map_layerItem_virtual.cpp
   src/mainwindow/map_panel/occmap_layerItem.cpp
   src/mainwindow/map_panel/robotpose_layerItem.cpp
+  src/mainwindow/map_panel/path_layerItem.cpp
 )
 
 qt5_wrap_ui(QT_UI_HPP ${UI_DIR})

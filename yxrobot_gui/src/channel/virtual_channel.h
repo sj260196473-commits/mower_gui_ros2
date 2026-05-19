@@ -47,6 +47,8 @@ signals:
     void emitUpdateGlobalCostMap(const OccupancyMap& map);
     void emitUpdateRobotPose(RobotPose pose);
     void emitUpdateLaserScan(const LaserScan& scan);
+    void emitUpdatePath(const Path& path);
+
 
 private:
     std::thread process_thread_;

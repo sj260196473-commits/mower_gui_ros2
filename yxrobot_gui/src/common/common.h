@@ -140,6 +140,10 @@ struct LaserScan {
     void clear() { data.clear(); }
 };
 
+struct Path{
+    std::vector<Point> waypoints;
+};
+
 //角度转弧度
 inline double deg2rad(double x) { return M_PI * x / 180.0; }
 //弧度转角度

@@ -46,6 +46,13 @@ bool rclcomm::Start()
         std::bind(&rclcomm::laserScanCallback,this,std::placeholders::_1),
         sub_laser_obt);
 
+    global_path_sub_ = node_->create_subscription<nav_msgs::msg::Path>(
+        "plan",
+        20,
+        std::bind(&rclcomm::globalPathCallback,this,std::placeholders::_1),
+        sub1_obt);
+
+
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(node_->get_clock(), std::chrono::seconds(10));
     transform_listener_ =
         std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
@@ -131,6 +138,9 @@ void rclcomm::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg
     double angle_increment = msg->angle_increment;
 
     try {
+        if (!tf_buffer_->canTransform("map", "base_scan", tf2::TimePointZero, std::chrono::milliseconds(100)))
+            return;
+
         geometry_msgs::msg::TransformStamped transform =
             tf_buffer_->lookupTransform("map", "base_scan", tf2::TimePointZero, std::chrono::milliseconds(100));
         tf2::Transform tf2_transform;
@@ -155,6 +165,21 @@ void rclcomm::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg
     {
 
     }
+}
+
+void rclcomm::globalPathCallback(const nav_msgs::msg::Path::SharedPtr msg)
+{
+    Path global_path;
+    global_path.waypoints.reserve(msg->poses.size());
+    for(const auto& pose_stamped : msg->poses)
+    {
+        Point p;    
+        p.x = pose_stamped.pose.position.x;
+        p.y = pose_stamped.pose.position.y;
+        global_path.waypoints.push_back(p);
+    }
+    emit emitUpdatePath(global_path);
+
 }
 
 void rclcomm::getRobotPose()

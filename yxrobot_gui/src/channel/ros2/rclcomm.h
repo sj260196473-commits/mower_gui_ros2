@@ -7,6 +7,7 @@
 //ROS2
 #include <rclcpp/rclcpp.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
+#include <nav_msgs/msg/path.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include "tf2_ros/buffer.h"
@@ -31,6 +32,7 @@ private:
     void localCostMapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void globalCostMapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg);
+    void globalPathCallback(const nav_msgs::msg::Path::SharedPtr msg);
     void getRobotPose();
     RobotPose getTransform(const std::string& from,const std::string& to);
 
@@ -43,6 +45,7 @@ private:
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr globalMap_sub_;
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr globalCostMap_sub_;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laserScan_sub_;
+    rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr global_path_sub_;
 
     std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
