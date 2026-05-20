@@ -22,6 +22,8 @@ MapGraphicsView::MapGraphicsView(QWidget* parent) :
     m_laserScanItem = new LaserItem("scan.laser","laser",20);
     m_qGraphicScene->addItem(m_laserScanItem);
 
+    m_globalPathItem = new PathLayerItem("plan.globalPath","globalPath",25);
+    m_qGraphicScene->addItem(m_globalPathItem);
 
     this->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
 
@@ -46,6 +48,7 @@ void MapGraphicsView::setCommChannel(VirtualChannel* channel)
     connect(channel,&VirtualChannel::emitUpdateGlobalCostMap,m_globalCostMapItem,&CostMapItem::updateMap);
     connect(channel,&VirtualChannel::emitUpdateRobotPose,m_robotPoseItem,&RobotPoseItem::updatePose);
     connect(channel,&VirtualChannel::emitUpdateLaserScan,m_laserScanItem,&LaserItem::UpdateLaserData);
+    connect(channel,&VirtualChannel::emitUpdatePath,m_globalPathItem,&PathLayerItem::UpdatePath);
 }
 
 void MapGraphicsView::updateMap(const OccupancyMap& map)

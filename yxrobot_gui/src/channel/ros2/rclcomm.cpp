@@ -179,6 +179,7 @@ void rclcomm::globalPathCallback(const nav_msgs::msg::Path::SharedPtr msg)
         global_path.waypoints.push_back(p);
     }
     emit emitUpdatePath(global_path);
+    // std::cout<<"update path!"<<std::endl;
 
 }
 

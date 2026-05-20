@@ -16,3 +16,8 @@ QRectF PathLayerItem::boundingRect() const
 {
     // Implementation for defining the bounding rectangle
 }
+
+void PathLayerItem::UpdatePath(const Path& path)
+{
+    std::cout<<"update path!"<<std::endl;
+}
