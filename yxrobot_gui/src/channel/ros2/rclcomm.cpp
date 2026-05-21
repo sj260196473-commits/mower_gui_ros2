@@ -173,10 +173,11 @@ void rclcomm::globalPathCallback(const nav_msgs::msg::Path::SharedPtr msg)
     global_path.waypoints.reserve(msg->poses.size());
     for(const auto& pose_stamped : msg->poses)
     {
-        Point p;    
+        Point p,trans_p;;    
         p.x = pose_stamped.pose.position.x;
         p.y = pose_stamped.pose.position.y;
-        global_path.waypoints.push_back(p);
+        m_globalMap.worldPose2Scene(p.x,p.y,trans_p.x,trans_p.y);
+        global_path.waypoints.push_back(trans_p);
     }
     emit emitUpdatePath(global_path);
     // std::cout<<"update path!"<<std::endl;
