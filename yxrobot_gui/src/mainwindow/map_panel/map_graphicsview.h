@@ -12,8 +12,10 @@
 #include <QEvent>
 #include <QMouseEvent>
 #include <QWheelEvent>
+#include <QContextMenuEvent>
 #include <QScrollBar>
 #include <QDebug>
+#include <QVector>
 
 class MapGraphicsView: public QGraphicsView
 {
@@ -29,6 +31,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
     void leaveEvent(QEvent *event) override;
+    void contextMenuEvent(QContextMenuEvent *event) override;
 
 signals:
     void mousePositionChanged(const QPointF& scene_pos, const QPointF& world_pos, bool has_world);
@@ -36,6 +39,13 @@ signals:
     void gridCellLengthChanged(double length_m);
 
 private:
+    struct LayerEntry {
+        QString name;
+        QGraphicsItem* item{nullptr};
+    };
+
+    void registerLayer(const QString& name, QGraphicsItem* item);
+    void showLayerContextMenu(const QPoint& global_pos);
     void focusOnRect(const QRectF& targetRect);
     void emitMousePosition(const QPoint& view_pos);
     void updateGridCellLengthStatus();
@@ -53,6 +63,7 @@ private:
     LaserItem* m_laserScanItem;
     PathLayerItem* m_globalPathItem;
     MapCoordinateTransformer coordinate_transformer_;
+    QVector<LayerEntry> layer_entries_;
 
 
     QPoint m_lastMousePos;  // 记录上一次鼠标的位置
