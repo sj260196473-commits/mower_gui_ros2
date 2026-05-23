@@ -1,7 +1,6 @@
 #ifndef RCLCOMM_H
 #define RCLCOMM_H
 
-#include <QObject>
 #include <thread>
 #include <iostream>
 //ROS2
@@ -19,7 +18,6 @@
 
 class rclcomm:public VirtualChannel
 {
-    Q_OBJECT
 public:
     rclcomm();
     ~rclcomm();

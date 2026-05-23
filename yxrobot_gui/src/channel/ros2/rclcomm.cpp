@@ -1,10 +1,7 @@
 #include "rclcomm.h"
 
 rclcomm::rclcomm() {
-    if(Init())
-    {
-        std::cout<<"初始化成功";
-    }
+    
 }
 
 rclcomm::~rclcomm()

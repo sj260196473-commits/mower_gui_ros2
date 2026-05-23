@@ -6,8 +6,18 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
     channelManager_ = std::make_unique<ChannelManager>();
-    ui->graphicsView->setCommChannel(channelManager_->getChannel());
+
+    auto channel = channelManager_->getChannel();
+    if (channel) {
+        ui->graphicsView->setCommChannel(channel);
+
+        if (!channel->Init()) {
+            std::cerr << "Failed to initialize channel" << std::endl;
+            return;
+        }
+    }
 }
 
 MainWindow::~MainWindow()

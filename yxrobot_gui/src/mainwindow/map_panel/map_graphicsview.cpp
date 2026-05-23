@@ -42,13 +42,20 @@ void MapGraphicsView::setCommChannel(VirtualChannel* channel)
         return;
     }
 
-    connect(channel,&VirtualChannel::emitUpdateMap,m_occMapItem,&OccMapItem::updateMap);
-    connect(channel,&VirtualChannel::emitUpdateMap,m_robotPoseItem,&RobotPoseItem::updateMap);
-    connect(channel,&VirtualChannel::emitUpdateMap,this,&MapGraphicsView::updateMap);
-    connect(channel,&VirtualChannel::emitUpdateGlobalCostMap,m_globalCostMapItem,&CostMapItem::updateMap);
-    connect(channel,&VirtualChannel::emitUpdateRobotPose,m_robotPoseItem,&RobotPoseItem::updatePose);
-    connect(channel,&VirtualChannel::emitUpdateLaserScan,m_laserScanItem,&LaserItem::UpdateLaserData);
-    connect(channel,&VirtualChannel::emitUpdatePath,m_globalPathItem,&PathLayerItem::UpdatePath);
+    connect(channel, &VirtualChannel::emitUpdateMap,
+            m_occMapItem, &OccMapItem::updateMap, Qt::QueuedConnection);
+    connect(channel, &VirtualChannel::emitUpdateMap,
+            m_robotPoseItem, &RobotPoseItem::updateMap, Qt::QueuedConnection);
+    connect(channel, &VirtualChannel::emitUpdateMap,
+            this, &MapGraphicsView::updateMap, Qt::QueuedConnection);
+    connect(channel, &VirtualChannel::emitUpdateGlobalCostMap,
+            m_globalCostMapItem, &CostMapItem::updateMap, Qt::QueuedConnection);
+    connect(channel, &VirtualChannel::emitUpdateRobotPose,
+            m_robotPoseItem, &RobotPoseItem::updatePose, Qt::QueuedConnection);
+    connect(channel, &VirtualChannel::emitUpdateLaserScan,
+            m_laserScanItem, &LaserItem::UpdateLaserData, Qt::QueuedConnection);
+    connect(channel, &VirtualChannel::emitUpdatePath,
+            m_globalPathItem, &PathLayerItem::UpdatePath, Qt::QueuedConnection);
 }
 
 void MapGraphicsView::updateMap(const OccupancyMap& map)
