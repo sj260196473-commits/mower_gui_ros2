@@ -2,6 +2,7 @@
 #define COSTMAP_LAYERITEM_H
 #include <QPainter>
 #include "common/common.h"
+#include "mainwindow/map_panel/costmap_color_policy.h"
 #include "mainwindow/map_panel/map_layeritem_virtual.h"
 
 class CostMapItem : public MapLayerItemVirtual
@@ -22,7 +23,7 @@ public slots:
 private:
     OccupancyMap m_map;
     QImage m_map_image;
-
+    CostMapColorPolicy color_policy_;
 
 };
 

@@ -51,7 +51,7 @@ void PathLayerItem::UpdatePath(const Path& path)
 
 void PathLayerItem::updateMap(const OccupancyMap& map)
 {
-    map_ = map;
+    coordinate_transformer_.updateMap(map);
     prepareGeometryChange();
     rebuildScenePath();
     update();
@@ -62,16 +62,15 @@ void PathLayerItem::rebuildScenePath()
     current_path_scene_.header = current_path_world_.header;
     current_path_scene_.waypoints.clear();
 
-    if (map_.isNULL()) {
+    if (!coordinate_transformer_.isValid()) {
         bounding_rect_ = QRectF();
         return;
     }
 
     current_path_scene_.waypoints.reserve(current_path_world_.waypoints.size());
     for (const auto& world_point : current_path_world_.waypoints) {
-        Point scene_point;
-        map_.worldPose2Scene(world_point.x, world_point.y, scene_point.x, scene_point.y);
-        current_path_scene_.waypoints.push_back(scene_point);
+        current_path_scene_.waypoints.push_back(
+            coordinate_transformer_.worldToScene(world_point));
     }
 
     computeBoundRect(current_path_scene_);

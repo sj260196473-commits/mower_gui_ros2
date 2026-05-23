@@ -22,22 +22,17 @@ QRectF CostMapItem::boundingRect() const
 void CostMapItem::updateMap(const OccupancyMap& map)
 {
     m_map = map;
-    Eigen::Matrix<Eigen::Vector4i, Eigen::Dynamic, Eigen::Dynamic> cost_map =
-        m_map.GetCostMapData();
 
     prepareGeometryChange();
     m_map_image = QImage(m_map.Cols(), m_map.Rows(),
                         QImage::Format_ARGB32);
     // map_image_.save("./test.png");
-    for (int i = 0; i < cost_map.cols(); i++)
-        for (int j = 0; j < cost_map.rows(); j++) {
-            Eigen::Vector4i color_data = cost_map(j, i);
-            QColor color;
-            color.setRgb(color_data[0], color_data[1], color_data[2]);
-            color.setAlpha(color_data[3]);
+    for (int i = 0; i < m_map.Cols(); i++) {
+        for (int j = 0; j < m_map.Rows(); j++) {
+            const QColor color = color_policy_.colorForCost(m_map(j, i));
             m_map_image.setPixelColor(i, j, color);
         }
+    }
     update();
 }
-
 

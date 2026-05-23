@@ -3,6 +3,7 @@
 #include <iostream>
 #include "mainwindow/map_panel/map_layeritem_virtual.h"
 #include "common/common.h"
+#include "common/map_coordinate_transformer.h"
 #include <QPainter>
 #include <QColor>
 #include <QGraphicsItem>
@@ -27,7 +28,7 @@ public slots:
 
 private:
     QRectF bounding_rect_;
-    OccupancyMap map_;
+    MapCoordinateTransformer coordinate_transformer_;
     Path current_path_world_;
     Path current_path_scene_;
 };

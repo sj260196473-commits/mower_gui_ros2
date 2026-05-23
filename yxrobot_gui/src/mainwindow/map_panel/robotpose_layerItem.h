@@ -7,6 +7,7 @@
 #include <QCursor>
 #include <QGraphicsSceneWheelEvent>
 #include "common/common.h"
+#include "common/map_coordinate_transformer.h"
 #include "mainwindow/map_panel/map_layeritem_virtual.h"
 
 class RobotPoseItem : public MapLayerItemVirtual
@@ -25,7 +26,8 @@ public slots:
 private:
     QPixmap m_robotImg;
     RobotPose m_currRobotPose;
-    OccupancyMap m_map;
+    MapCoordinateTransformer coordinate_transformer_;
+    double map_resolution_{0.0};
 
     double m_robotActualWidth_m = 1.0;  // 机器人实际宽度（米），例如 0.5m
     double m_robotActualHeight_m = 1.0; // 机器人实际长度（米），例如 0.5m

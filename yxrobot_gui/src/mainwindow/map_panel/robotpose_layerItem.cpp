@@ -36,10 +36,11 @@ void RobotPoseItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *opt
 
 void RobotPoseItem::updateMap(const OccupancyMap& map)
 {
-    m_map = map;
+    coordinate_transformer_.updateMap(map);
+    map_resolution_ = map.getRes();
 
     // 获取地图分辨率 (假设方法名为 resolution() 或 getResolution()，单位 m/pixel)
-    double res = m_map.getRes();
+    double res = map_resolution_;
 
     if (res > 0.0) {
         // 将 米 转换为 像素
@@ -64,8 +65,11 @@ void RobotPoseItem::updatePose(RobotPose pose)
     pos.setY(pose.y);
     // QPointF scenePose = occMapItem_->mapToScene(pos);//图层坐标转换map->场景坐标
     m_currRobotPose = pose;
-    RobotPose robotScenePose;
-    m_map.worldPose2Scene(pose.x,pose.y,robotScenePose.x,robotScenePose.y);
+    if (!coordinate_transformer_.isValid()) {
+        return;
+    }
+    Point robotWorldPose(pose.x, pose.y);
+    Point robotScenePose = coordinate_transformer_.worldToScene(robotWorldPose);
     // std::cout<<"robotScenePose:"<<robotScenePose.x<<","<<robotScenePose.y<<std::endl;
     // std::cout<<"getPose:"<<pose.x<<","<<pose.y<<std::endl;
     setPos(robotScenePose.x, robotScenePose.y);//设置场景坐标系下坐标

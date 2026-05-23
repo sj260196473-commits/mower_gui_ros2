@@ -68,7 +68,7 @@ void LaserItem::UpdateLaserData(const LaserScan& scan) {
 
 void LaserItem::updateMap(const OccupancyMap& map)
 {
-    map_ = map;
+    coordinate_transformer_.updateMap(map);
     prepareGeometryChange();
     rebuildSceneLaserData();
     update();
@@ -77,15 +77,14 @@ void LaserItem::updateMap(const OccupancyMap& map)
 std::vector<Point> LaserItem::convertWorldPointsToScene(const std::vector<Point>& world_points) const
 {
     std::vector<Point> scene_points;
-    if (map_.isNULL()) {
+    // 只有当收到全局地图时，坐标转换器才有效，否则直接返回空
+    if (!coordinate_transformer_.isValid()) {
         return scene_points;
     }
 
     scene_points.reserve(world_points.size());
     for (const auto& world_point : world_points) {
-        Point scene_point;
-        map_.worldPose2Scene(world_point.x, world_point.y, scene_point.x, scene_point.y);
-        scene_points.push_back(scene_point);
+        scene_points.push_back(coordinate_transformer_.worldToScene(world_point));
     }
     return scene_points;
 }

@@ -2,6 +2,7 @@
 #define LASER_LAYERITEM_H
 #include "mainwindow/map_panel/map_layeritem_virtual.h"
 #include "common/common.h"
+#include "common/map_coordinate_transformer.h"
 #include <QPainter>
 #include <QColor>
 #include <QGraphicsItem>
@@ -27,7 +28,7 @@ private:
     void rebuildSceneLaserData();
 
 private:
-    OccupancyMap map_;
+    MapCoordinateTransformer coordinate_transformer_;
     std::map<int, QColor> location_to_color_;
     std::map<int, std::vector<Point>> laser_data_world_;
     std::map<int, std::vector<Point>> laser_data_scene_;
