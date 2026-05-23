@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QLabel>
+#include <QPointF>
 #include "channel/channel_manager.h"
 #include "common/common.h"
 
@@ -23,6 +24,10 @@ private slots:
     void on_hide_left_btn_clicked();
 
 private:
+    void setupStatusBar();
+    void updateMousePositionStatus(const QPointF& scene_pos, const QPointF& world_pos, bool has_world);
+    void clearMousePositionStatus();
+
     Ui::MainWindow *ui;
     std::unique_ptr<ChannelManager> channelManager_;
     QLabel* mousePositionLabel_{nullptr};

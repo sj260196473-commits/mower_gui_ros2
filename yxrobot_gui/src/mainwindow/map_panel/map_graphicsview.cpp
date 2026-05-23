@@ -100,7 +100,6 @@ void MapGraphicsView::mousePressEvent(QMouseEvent *event)
 {
     emitMousePosition(event->pos());
 
-    // 习惯上：左键或中键都可以拖拽地图 (类似 RViz)
     if (event->button() == Qt::LeftButton || event->button() == Qt::MiddleButton) {
         m_lastMousePos = event->pos();
         m_isDragging = true;
@@ -147,24 +146,40 @@ void MapGraphicsView::mouseReleaseEvent(QMouseEvent *event)
 // 进阶优化：自己接管滚轮缩放（比内置的更平滑，且可以限制缩放比例）
 void MapGraphicsView::wheelEvent(QWheelEvent *event)
 {
-    // 获取当前缩放矩阵的值（防止无限缩小导致崩溃）
-    double currentScale = transform().m11();
-
-    double scaleFactor = 1.15; // 每次滚动放大/缩小 15%
-
-    if (event->angleDelta().y() > 0) {
-        // 向上滚，放大
-        if (currentScale < 20.0) { // 最大放大倍数限制
-            scale(scaleFactor, scaleFactor);
-        }
-    } else {
-        // 向下滚，缩小
-        if (currentScale > 0.01) { // 最小缩小倍数限制
-            scale(1.0 / scaleFactor, 1.0 / scaleFactor);
-        }
+    const int wheelDelta = event->angleDelta().y();
+    if (wheelDelta == 0) {
+        event->ignore();
+        return;
     }
 
-    QGraphicsView::wheelEvent(event);
+    const double currentScale = transform().m11();
+    const double scaleStep = 1.15;
+    const double minScale = 0.01;
+    const double maxScale = 20.0;
+
+    double scaleFactor = 1.0;
+    if (wheelDelta > 0 && currentScale < maxScale) {
+        scaleFactor = scaleStep;
+    } else if (wheelDelta < 0 && currentScale > minScale) {
+        scaleFactor = 1.0 / scaleStep;
+    }
+
+    if (scaleFactor == 1.0) {
+        event->accept();
+        return;
+    }
+
+    const QPoint mousePos = event->pos();
+    const QPointF scenePosBeforeScale = mapToScene(mousePos);
+    scale(scaleFactor, scaleFactor);
+    const QPoint viewPosAfterScale = mapFromScene(scenePosBeforeScale);
+    const QPoint viewDelta = viewPosAfterScale - mousePos;
+
+    horizontalScrollBar()->setValue(horizontalScrollBar()->value() + viewDelta.x());
+    verticalScrollBar()->setValue(verticalScrollBar()->value() + viewDelta.y());
+
+    emitMousePosition(mousePos);
+    event->accept();
 }
 
 void MapGraphicsView::leaveEvent(QEvent *event)
