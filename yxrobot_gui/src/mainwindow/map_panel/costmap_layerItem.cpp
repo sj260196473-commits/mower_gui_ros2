@@ -11,6 +11,8 @@ CostMapItem::CostMapItem(const QString& id,
 
 void CostMapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
     painter->drawImage(0,0,m_map_image);
 }
 
@@ -21,18 +23,15 @@ QRectF CostMapItem::boundingRect() const
 
 void CostMapItem::updateMap(const OccupancyMap& map)
 {
-    m_map = map;
-
     prepareGeometryChange();
-    m_map_image = QImage(m_map.Cols(), m_map.Rows(),
+    m_map_image = QImage(map.Cols(), map.Rows(),
                         QImage::Format_ARGB32);
     // map_image_.save("./test.png");
-    for (int i = 0; i < m_map.Cols(); i++) {
-        for (int j = 0; j < m_map.Rows(); j++) {
-            const QColor color = color_policy_.colorForCost(m_map(j, i));
-            m_map_image.setPixelColor(i, j, color);
+    for (int y = 0; y < map.Rows(); y++) {
+        auto * row = reinterpret_cast<QRgb *>(m_map_image.scanLine(y));
+        for (int x = 0; x < map.Cols(); x++) {
+            row[x] = costMapRgbaForCost(map(y, x));
         }
     }
     update();
 }
-

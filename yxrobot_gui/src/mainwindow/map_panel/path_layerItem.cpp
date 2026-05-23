@@ -9,6 +9,8 @@ PathLayerItem::PathLayerItem(const QString& id,const QString& name,const int& z,
 
 void PathLayerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
     // Implementation for painting the path layer item
     drawPath(painter, current_path_scene_);
 }

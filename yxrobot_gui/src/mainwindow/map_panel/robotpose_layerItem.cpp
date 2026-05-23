@@ -26,6 +26,8 @@ QRectF RobotPoseItem::boundingRect() const {
 
 void RobotPoseItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                      QWidget *widget) {
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
     painter->setRenderHint(QPainter::Antialiasing, true);  //设置反锯齿 反走样
     painter->save();
     painter->rotate(rad2deg(m_currRobotPose.theta));//旋转到机器人坐标theta

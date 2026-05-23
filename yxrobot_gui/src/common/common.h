@@ -39,6 +39,7 @@ public:
     ~OccupancyMap() = default;
 
     auto &operator()(int r, int c) { return m_map_data(r, c); }
+    const auto &operator()(int r, int c) const { return m_map_data(r, c); }
     void SetMapData(const Eigen::MatrixXi &data) {
         m_map_data = data;
     }

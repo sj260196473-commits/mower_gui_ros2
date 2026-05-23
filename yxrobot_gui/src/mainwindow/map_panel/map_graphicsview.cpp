@@ -156,20 +156,5 @@ void MapGraphicsView::wheelEvent(QWheelEvent *event)
         }
     }
 
-    QRect viewportRect = this->viewport()->rect();
-
-    // 将屏幕的四个角映射到物理世界 (Scene) 坐标系中
-    QPointF viewTL = this->mapToScene(viewportRect.topLeft());
-    QPointF viewTR = this->mapToScene(viewportRect.topRight());
-    QPointF viewBL = this->mapToScene(viewportRect.bottomLeft());
-    QPointF viewBR = this->mapToScene(viewportRect.bottomRight());
-
-    QRectF itemRect = m_laserScanItem->sceneBoundingRect();
-
-    QPointF itemTL = itemRect.topLeft();
-    QPointF itemTR = itemRect.topRight();
-    QPointF itemBL = itemRect.bottomLeft();
-    QPointF itemBR = itemRect.bottomRight();
-
     QGraphicsView::wheelEvent(event);
 }

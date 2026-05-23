@@ -3,8 +3,21 @@
 
 #include <iostream>
 #include <QPainter>
+#include <QRgb>
 #include "mainwindow/map_panel/map_layeritem_virtual.h"
 #include "common/common.h"
+
+inline QRgb occMapRgbaForOccupancy(double occupancy)
+{
+    if (occupancy > 0) {
+        const int alpha = static_cast<int>(std::clamp(occupancy * 2.55, 0.0, 255.0));
+        return qRgba(0, 0, 0, alpha);
+    }
+    if (occupancy == -1) {
+        return qRgba(160, 160, 160, 255);
+    }
+    return qRgba(255, 255, 255, 255);
+}
 
 class OccMapItem : public MapLayerItemVirtual
 {
@@ -21,7 +34,6 @@ public slots:
 
 private:
     QImage m_map_image;
-    OccupancyMap m_map;
 };
 
 #endif // OCCMAP_LAYERITEM_H
