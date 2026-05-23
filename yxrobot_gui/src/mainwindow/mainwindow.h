@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <QPointF>
+#include <QPushButton>
 #include "channel/channel_manager.h"
 #include "common/common.h"
 
@@ -31,6 +32,7 @@ private:
 
     Ui::MainWindow *ui;
     std::unique_ptr<ChannelManager> channelManager_;
+    QPushButton* focusMapButton_{nullptr};
     QLabel* mousePositionLabel_{nullptr};
     QLabel* gridCellLengthLabel_{nullptr};
 

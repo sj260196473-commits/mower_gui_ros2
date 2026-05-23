@@ -29,6 +29,10 @@ MainWindow::~MainWindow()
 
 void MainWindow::setupStatusBar()
 {
+    focusMapButton_ = new QPushButton("Focus Map", this);
+    focusMapButton_->setToolTip("Focus map view");
+    ui->statusbar->addWidget(focusMapButton_);
+
     mousePositionLabel_ = new QLabel(this);
     clearMousePositionStatus();
     ui->statusbar->addPermanentWidget(mousePositionLabel_);
@@ -53,6 +57,12 @@ void MainWindow::setupStatusBar()
         &MapGraphicsView::gridCellLengthChanged,
         this,
         &MainWindow::updateGridCellLengthStatus);
+
+    connect(
+        focusMapButton_,
+        &QPushButton::clicked,
+        ui->graphicsView,
+        &MapGraphicsView::focusMapView);
 }
 
 void MainWindow::updateMousePositionStatus(

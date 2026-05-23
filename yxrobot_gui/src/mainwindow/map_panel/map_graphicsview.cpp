@@ -15,6 +15,7 @@ MapGraphicsView::MapGraphicsView(QWidget* parent) :
     m_qGraphicScene = new QGraphicsScene();
     this->scale(1,-1);//view沿x轴对称翻转，对其世界坐标系
     this->setScene(m_qGraphicScene);
+    this->setBackgroundBrush(QColor(48, 48, 48));
 
     //初始化Item
     m_occMapItem = new OccMapItem("map.occMap", "occMap", 0);
@@ -87,14 +88,24 @@ void MapGraphicsView::setCommChannel(VirtualChannel* channel)
             m_globalPathItem, &PathLayerItem::UpdatePath, Qt::QueuedConnection);
 }
 
+void MapGraphicsView::focusMapView()
+{
+    if (current_map_scene_rect_.isNull() || current_map_scene_rect_.isEmpty()) {
+        return;
+    }
+
+    focusOnRect(current_map_scene_rect_);
+    updateGridCellLengthStatus();
+}
+
 void MapGraphicsView::updateMap(const OccupancyMap& map)
 {
     if(map.isNULL()) return;
     coordinate_transformer_.updateMap(map);
 
-    const QRectF mapSceneRect(0, 0, map.width(), map.height());
-    const qreal margin = std::max(mapSceneRect.width(), mapSceneRect.height()) * 5.0;
-    const QRectF interactionSceneRect = mapSceneRect.adjusted(
+    current_map_scene_rect_ = QRectF(0, 0, map.width(), map.height());
+    const qreal margin = std::max(current_map_scene_rect_.width(), current_map_scene_rect_.height()) * 5.0;
+    const QRectF interactionSceneRect = current_map_scene_rect_.adjusted(
         -margin,
         -margin,
         margin,
@@ -104,7 +115,7 @@ void MapGraphicsView::updateMap(const OccupancyMap& map)
     m_gridItem->setSceneRect(interactionSceneRect);
 
     if (!has_initial_map_focus_) {
-        focusOnRect(mapSceneRect);
+        focusMapView();
         has_initial_map_focus_ = true;
     }
 

@@ -24,6 +24,9 @@ public:
     MapGraphicsView(QWidget* parent = nullptr);
     void setCommChannel(VirtualChannel* channel);
 
+public slots:
+    void focusMapView();
+
 protected:
     // 重写鼠标与滚轮事件
     void mousePressEvent(QMouseEvent *event) override;
@@ -64,6 +67,7 @@ private:
     PathLayerItem* m_globalPathItem;
     MapCoordinateTransformer coordinate_transformer_;
     QVector<LayerEntry> layer_entries_;
+    QRectF current_map_scene_rect_;
 
 
     QPoint m_lastMousePos;  // 记录上一次鼠标的位置
