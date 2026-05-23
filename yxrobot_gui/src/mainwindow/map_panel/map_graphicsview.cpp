@@ -253,35 +253,5 @@ double MapGraphicsView::gridCellSceneLength() const
     }
 
     const double targetPixelLength = 80.0;
-    const double targetSceneLength = targetPixelLength / pixelsPerSceneUnit;
-    const Point worldStart = coordinate_transformer_.sceneToWorld(Point(0.0, 0.0));
-    const Point worldEnd = coordinate_transformer_.sceneToWorld(Point(targetSceneLength, 0.0));
-    const double targetWorldLength = std::abs(worldEnd.x - worldStart.x);
-    const double niceWorldLength = niceGridCellWorldLength(targetWorldLength);
-
-    const Point sceneStart = coordinate_transformer_.worldToScene(Point(0.0, 0.0));
-    const Point sceneEnd = coordinate_transformer_.worldToScene(Point(niceWorldLength, 0.0));
-    return std::abs(sceneEnd.x - sceneStart.x);
-}
-
-double MapGraphicsView::niceGridCellWorldLength(double target_length_m) const
-{
-    if (target_length_m <= 0.0) {
-        return 0.0;
-    }
-
-    const double exponent = std::floor(std::log10(target_length_m));
-    const double base = std::pow(10.0, exponent);
-    const double normalized = target_length_m / base;
-
-    if (normalized <= 1.0) {
-        return base;
-    }
-    if (normalized <= 2.0) {
-        return 2.0 * base;
-    }
-    if (normalized <= 5.0) {
-        return 5.0 * base;
-    }
-    return 10.0 * base;
+    return targetPixelLength / pixelsPerSceneUnit;
 }

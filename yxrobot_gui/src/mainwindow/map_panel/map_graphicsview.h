@@ -40,7 +40,6 @@ private:
     void emitMousePosition(const QPoint& view_pos);
     void updateGridCellLengthStatus();
     double gridCellSceneLength() const;
-    double niceGridCellWorldLength(double target_length_m) const;
 
 private slots:
     void updateMap(const OccupancyMap& map);
