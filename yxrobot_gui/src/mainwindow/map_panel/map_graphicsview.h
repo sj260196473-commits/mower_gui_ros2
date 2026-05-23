@@ -52,6 +52,7 @@ private:
 
     QPoint m_lastMousePos;  // 记录上一次鼠标的位置
     bool m_isDragging = false; // 是否正在拖拽的标志位
+    bool has_initial_map_focus_{false};
 };
 
 #endif // MAP_GRAPHICSVIEW_H

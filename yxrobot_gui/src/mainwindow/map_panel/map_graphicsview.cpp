@@ -1,5 +1,6 @@
 #include "mainwindow/map_panel/map_graphicsview.h"
 #include <QPainter>
+#include <algorithm>
 
 MapGraphicsView::MapGraphicsView(QWidget* parent) :
     QGraphicsView(parent)
@@ -70,12 +71,20 @@ void MapGraphicsView::updateMap(const OccupancyMap& map)
     if(map.isNULL()) return;
     coordinate_transformer_.updateMap(map);
 
-    // 直接使用像素尺寸作为 Scene 的边界！
-    QRectF mapSceneRect(0, 0, map.width(), map.height());
+    const QRectF mapSceneRect(0, 0, map.width(), map.height());
+    const qreal margin = std::max(mapSceneRect.width(), mapSceneRect.height()) * 5.0;
+    const QRectF interactionSceneRect = mapSceneRect.adjusted(
+        -margin,
+        -margin,
+        margin,
+        margin);
 
-    m_qGraphicScene->setSceneRect(mapSceneRect);
+    m_qGraphicScene->setSceneRect(interactionSceneRect);
 
-    focusOnRect(mapSceneRect);
+    if (!has_initial_map_focus_) {
+        focusOnRect(mapSceneRect);
+        has_initial_map_focus_ = true;
+    }
 }
 
 void MapGraphicsView::focusOnRect(const QRectF& targetRect)
