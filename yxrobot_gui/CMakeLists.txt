@@ -38,9 +38,11 @@ set(PRO_INCLUDE_DIR
   src/channel/channel_manager.h
   src/channel/virtual_channel.h
   src/common/common.h
+  src/common/map_coordinate_transformer.h
   src/common/point.h
   src/mainwindow/mainwindow.h
   src/mainwindow/map_panel/costmap_layerItem.h
+  src/mainwindow/map_panel/grid_layeritem.h
   src/mainwindow/map_panel/laser_layeritem.h
   src/mainwindow/map_panel/mapdisplay_factory.h
   src/mainwindow/map_panel/map_graphicsview.h
@@ -55,6 +57,7 @@ set(PRO_SOURCES_DIR
   src/channel/channel_manager.cpp
   src/mainwindow/mainwindow.cpp
   src/mainwindow/map_panel/costmap_layerItem.cpp
+  src/mainwindow/map_panel/grid_layeritem.cpp
   src/mainwindow/map_panel/laser_layeritem.cpp
   src/mainwindow/map_panel/mapdisplay_factory.cpp
   src/mainwindow/map_panel/map_graphicsview.cpp
@@ -99,4 +102,3 @@ endif()
 if(CHANNEL_OPTION STREQUAL "ros2")
   add_subdirectory(src/channel/ros2)
 endif()
-

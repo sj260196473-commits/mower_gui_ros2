@@ -1,6 +1,7 @@
 #include "mainwindow/map_panel/map_graphicsview.h"
 #include <QPainter>
 #include <algorithm>
+#include <cmath>
 
 MapGraphicsView::MapGraphicsView(QWidget* parent) :
     QGraphicsView(parent)
@@ -19,6 +20,9 @@ MapGraphicsView::MapGraphicsView(QWidget* parent) :
 
     m_globalCostMapItem = new CostMapItem("map.globalCostMap", "globalCostMap", 10);
     m_qGraphicScene->addItem(m_globalCostMapItem);
+
+    m_gridItem = new GridLayerItem();
+    m_qGraphicScene->addItem(m_gridItem);
 
     m_robotPoseItem = new RobotPoseItem("localization.robot", "robot", 15);
     m_qGraphicScene->addItem(m_robotPoseItem);
@@ -80,11 +84,14 @@ void MapGraphicsView::updateMap(const OccupancyMap& map)
         margin);
 
     m_qGraphicScene->setSceneRect(interactionSceneRect);
+    m_gridItem->setSceneRect(interactionSceneRect);
 
     if (!has_initial_map_focus_) {
         focusOnRect(mapSceneRect);
         has_initial_map_focus_ = true;
     }
+
+    updateGridCellLengthStatus();
 }
 
 void MapGraphicsView::focusOnRect(const QRectF& targetRect)
@@ -187,6 +194,7 @@ void MapGraphicsView::wheelEvent(QWheelEvent *event)
     horizontalScrollBar()->setValue(horizontalScrollBar()->value() + viewDelta.x());
     verticalScrollBar()->setValue(verticalScrollBar()->value() + viewDelta.y());
 
+    updateGridCellLengthStatus();
     emitMousePosition(mousePos);
     event->accept();
 }
@@ -211,4 +219,69 @@ void MapGraphicsView::emitMousePosition(const QPoint& view_pos)
     }
 
     emit mousePositionChanged(scene_pos, world_pos, has_world);
+}
+
+void MapGraphicsView::updateGridCellLengthStatus()
+{
+    if (!coordinate_transformer_.isValid()) {
+        return;
+    }
+
+    const double gridSize = gridCellSceneLength();
+    const Point worldStart = coordinate_transformer_.sceneToWorld(Point(0.0, 0.0));
+    const Point worldEnd = coordinate_transformer_.sceneToWorld(Point(gridSize, 0.0));
+    const double length = std::abs(worldEnd.x - worldStart.x);
+
+    if (std::abs(length - current_grid_cell_length_m_) < 1e-9) {
+        return;
+    }
+
+    current_grid_cell_length_m_ = length;
+    m_gridItem->setGridSceneLength(gridSize);
+    emit gridCellLengthChanged(current_grid_cell_length_m_);
+}
+
+double MapGraphicsView::gridCellSceneLength() const
+{
+    if (!coordinate_transformer_.isValid()) {
+        return 0.0;
+    }
+
+    const double pixelsPerSceneUnit = std::abs(transform().m11());
+    if (pixelsPerSceneUnit <= 0.0) {
+        return 0.0;
+    }
+
+    const double targetPixelLength = 80.0;
+    const double targetSceneLength = targetPixelLength / pixelsPerSceneUnit;
+    const Point worldStart = coordinate_transformer_.sceneToWorld(Point(0.0, 0.0));
+    const Point worldEnd = coordinate_transformer_.sceneToWorld(Point(targetSceneLength, 0.0));
+    const double targetWorldLength = std::abs(worldEnd.x - worldStart.x);
+    const double niceWorldLength = niceGridCellWorldLength(targetWorldLength);
+
+    const Point sceneStart = coordinate_transformer_.worldToScene(Point(0.0, 0.0));
+    const Point sceneEnd = coordinate_transformer_.worldToScene(Point(niceWorldLength, 0.0));
+    return std::abs(sceneEnd.x - sceneStart.x);
+}
+
+double MapGraphicsView::niceGridCellWorldLength(double target_length_m) const
+{
+    if (target_length_m <= 0.0) {
+        return 0.0;
+    }
+
+    const double exponent = std::floor(std::log10(target_length_m));
+    const double base = std::pow(10.0, exponent);
+    const double normalized = target_length_m / base;
+
+    if (normalized <= 1.0) {
+        return base;
+    }
+    if (normalized <= 2.0) {
+        return 2.0 * base;
+    }
+    if (normalized <= 5.0) {
+        return 5.0 * base;
+    }
+    return 10.0 * base;
 }

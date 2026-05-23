@@ -26,11 +26,13 @@ private slots:
 private:
     void setupStatusBar();
     void updateMousePositionStatus(const QPointF& scene_pos, const QPointF& world_pos, bool has_world);
+    void updateGridCellLengthStatus(double length_m);
     void clearMousePositionStatus();
 
     Ui::MainWindow *ui;
     std::unique_ptr<ChannelManager> channelManager_;
     QLabel* mousePositionLabel_{nullptr};
+    QLabel* gridCellLengthLabel_{nullptr};
 
     int m_hideLeftIndex = 0;
     int m_hideRightIndex = 0;

@@ -33,6 +33,9 @@ void MainWindow::setupStatusBar()
     clearMousePositionStatus();
     ui->statusbar->addPermanentWidget(mousePositionLabel_);
 
+    gridCellLengthLabel_ = new QLabel("Grid: -", this);
+    ui->statusbar->addPermanentWidget(gridCellLengthLabel_);
+
     connect(
         ui->graphicsView,
         &MapGraphicsView::mousePositionChanged,
@@ -44,6 +47,12 @@ void MainWindow::setupStatusBar()
         &MapGraphicsView::mouseLeftScene,
         this,
         &MainWindow::clearMousePositionStatus);
+
+    connect(
+        ui->graphicsView,
+        &MapGraphicsView::gridCellLengthChanged,
+        this,
+        &MainWindow::updateGridCellLengthStatus);
 }
 
 void MainWindow::updateMousePositionStatus(
@@ -78,6 +87,20 @@ void MainWindow::clearMousePositionStatus()
     }
 
     mousePositionLabel_->setText("Scene: -, -    World: -, -");
+}
+
+void MainWindow::updateGridCellLengthStatus(double length_m)
+{
+    if (!gridCellLengthLabel_) {
+        return;
+    }
+
+    if (length_m >= 1.0) {
+        gridCellLengthLabel_->setText(QString("Grid: %1 m").arg(length_m, 0, 'f', 2));
+        return;
+    }
+
+    gridCellLengthLabel_->setText(QString("Grid: %1 cm").arg(length_m * 100.0, 0, 'f', 1));
 }
 
 void MainWindow::on_hide_right_btn_clicked()

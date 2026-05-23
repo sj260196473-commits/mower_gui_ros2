@@ -3,6 +3,7 @@
 #include <QGraphicsView>
 #include "mainwindow/map_panel/occmap_layerItem.h"
 #include "mainwindow/map_panel/costmap_layerItem.h"
+#include "mainwindow/map_panel/grid_layeritem.h"
 #include "mainwindow/map_panel/robotpose_layerItem.h"
 #include "mainwindow/map_panel/laser_layeritem.h"
 #include "mainwindow/map_panel/path_layerItem.h"
@@ -32,10 +33,14 @@ protected:
 signals:
     void mousePositionChanged(const QPointF& scene_pos, const QPointF& world_pos, bool has_world);
     void mouseLeftScene();
+    void gridCellLengthChanged(double length_m);
 
 private:
     void focusOnRect(const QRectF& targetRect);
     void emitMousePosition(const QPoint& view_pos);
+    void updateGridCellLengthStatus();
+    double gridCellSceneLength() const;
+    double niceGridCellWorldLength(double target_length_m) const;
 
 private slots:
     void updateMap(const OccupancyMap& map);
@@ -44,6 +49,7 @@ private:
     QGraphicsScene* m_qGraphicScene;
     OccMapItem* m_occMapItem;
     CostMapItem* m_globalCostMapItem;
+    GridLayerItem* m_gridItem;
     RobotPoseItem* m_robotPoseItem;
     LaserItem* m_laserScanItem;
     PathLayerItem* m_globalPathItem;
@@ -53,6 +59,7 @@ private:
     QPoint m_lastMousePos;  // 记录上一次鼠标的位置
     bool m_isDragging = false; // 是否正在拖拽的标志位
     bool has_initial_map_focus_{false};
+    double current_grid_cell_length_m_{0.0};
 };
 
 #endif // MAP_GRAPHICSVIEW_H
