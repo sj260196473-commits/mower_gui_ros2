@@ -47,6 +47,10 @@ void MapGraphicsView::setCommChannel(VirtualChannel* channel)
     connect(channel, &VirtualChannel::emitUpdateMap,
             m_robotPoseItem, &RobotPoseItem::updateMap, Qt::QueuedConnection);
     connect(channel, &VirtualChannel::emitUpdateMap,
+            m_laserScanItem, &LaserItem::updateMap, Qt::QueuedConnection);
+    connect(channel, &VirtualChannel::emitUpdateMap,
+            m_globalPathItem, &PathLayerItem::updateMap, Qt::QueuedConnection);
+    connect(channel, &VirtualChannel::emitUpdateMap,
             this, &MapGraphicsView::updateMap, Qt::QueuedConnection);
     connect(channel, &VirtualChannel::emitUpdateGlobalCostMap,
             m_globalCostMapItem, &CostMapItem::updateMap, Qt::QueuedConnection);

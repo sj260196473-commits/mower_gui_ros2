@@ -6,6 +6,7 @@
 #include <QColor>
 #include <QGraphicsItem>
 #include <QGraphicsSceneWheelEvent>
+#include <map>
 
 
 class LaserItem : public MapLayerItemVirtual
@@ -15,15 +16,20 @@ public:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = Q_NULLPTR) override;
     QRectF boundingRect() const;
 
+    void updateMap(const OccupancyMap& map);
     void UpdateLaserData(const LaserScan& scan);
 
 private:
     QColor Id2Color(int id);
     void drawLaser(QPainter *painter, int id, const std::vector<Point>& data);
     void computeBoundRect(const std::map<int, std::vector<Point>> &laser_scan);
+    std::vector<Point> convertWorldPointsToScene(const std::vector<Point>& world_points) const;
+    void rebuildSceneLaserData();
 
 private:
+    OccupancyMap map_;
     std::map<int, QColor> location_to_color_;
+    std::map<int, std::vector<Point>> laser_data_world_;
     std::map<int, std::vector<Point>> laser_data_scene_;
     QRectF bounding_rect_;
 };

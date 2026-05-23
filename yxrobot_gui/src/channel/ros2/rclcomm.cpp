@@ -149,12 +149,12 @@ void rclcomm::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg
             double angle = msg->angle_min + i * angle_increment;
             tf2::Vector3 point_laser(msg->ranges[i] * cos(angle), msg->ranges[i] * sin(angle), 0.0);
             tf2::Vector3 point_base = tf2_transform * point_laser;
-            Point p,trans_p;
+            Point p;
             p.x = point_base.x();
             p.y = point_base.y();
-            m_globalMap.worldPose2Scene(p.x,p.y,trans_p.x,trans_p.y);
-            laser_points.push_back(trans_p);
+            laser_points.push_back(p);
         }
+        laser_points.header.frame_id = "map";
         laser_points.id = 1;
         emit emitUpdateLaserScan(laser_points);
     }
@@ -167,14 +167,14 @@ void rclcomm::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg
 void rclcomm::globalPathCallback(const nav_msgs::msg::Path::SharedPtr msg)
 {
     Path global_path;
+    global_path.header.frame_id = msg->header.frame_id;
     global_path.waypoints.reserve(msg->poses.size());
     for(const auto& pose_stamped : msg->poses)
     {
-        Point p,trans_p;;    
+        Point p;
         p.x = pose_stamped.pose.position.x;
         p.y = pose_stamped.pose.position.y;
-        m_globalMap.worldPose2Scene(p.x,p.y,trans_p.x,trans_p.y);
-        global_path.waypoints.push_back(trans_p);
+        global_path.waypoints.push_back(p);
     }
     emit emitUpdatePath(global_path);
     // std::cout<<"update path!"<<std::endl;
@@ -215,4 +215,3 @@ RobotPose rclcomm::getTransform(const std::string& from,const std::string& to)
 
     return pose;
 }
-

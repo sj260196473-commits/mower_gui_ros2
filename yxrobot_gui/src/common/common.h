@@ -2,10 +2,17 @@
 #define COMMON_H
 #include <cstdint>
 #include <math.h>
+#include <string>
+#include <vector>
 #include <Eigen/Dense>
 #include "point.h"
 
 typedef point<double> Point;
+
+struct Header {
+    std::string frame_id;
+    int64_t stamp_ns{0};
+};
 
 struct RobotPose {
     double x{0};
@@ -58,7 +65,7 @@ public:
    * @return
    */
     void worldPose2Scene(const double &world_x,const double &world_y,
-                         double &scene_x,double &scene_y)
+                         double &scene_x,double &scene_y) const
     {
         scene_x = (world_x - m_origin[0]) / m_resolution;
         scene_y = (world_y - m_origin[1]) / m_resolution;
@@ -73,7 +80,7 @@ public:
    * @return
    */
     void scenePose2World(const double &scene_x, const double &scene_y,
-                         double &world_x, double &world_y)
+                         double &world_x, double &world_y) const
     {
         world_x = scene_x * m_resolution + m_origin[0];
         world_y = scene_y * m_resolution + m_origin[1];
@@ -134,13 +141,15 @@ struct LaserScan {
     LaserScan() = default;
     LaserScan(int i, std::vector<Point> d) : id(i), data(d) {}
     void reserve(uint32_t length){data.reserve(length);}
-    int id;
+    Header header;
+    int id{0};
     std::vector<Point> data;
     void push_back(Point p) { data.push_back(p); }
     void clear() { data.clear(); }
 };
 
 struct Path{
+    Header header;
     std::vector<Point> waypoints;
 };
 

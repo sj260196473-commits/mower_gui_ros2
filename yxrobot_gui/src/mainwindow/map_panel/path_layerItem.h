@@ -19,13 +19,17 @@ public:
 private:
     void computeBoundRect(const Path& path);
     void drawPath(QPainter *painter, const Path& path);
+    void rebuildScenePath();
 
 public slots:
+    void updateMap(const OccupancyMap& map);
     void UpdatePath(const Path& path);
 
 private:
     QRectF bounding_rect_;
-    Path current_path_;
+    OccupancyMap map_;
+    Path current_path_world_;
+    Path current_path_scene_;
 };
 
 #endif // PATH_LAYERITEM_H

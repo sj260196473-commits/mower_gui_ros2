@@ -59,10 +59,44 @@ void LaserItem::computeBoundRect(const std::map<int, std::vector<Point>> &laser_
 
 void LaserItem::UpdateLaserData(const LaserScan& scan) {
     // std::cout<<"update laser!"<<std::endl;
-    laser_data_scene_[scan.id] = scan.data;
+    laser_data_world_[scan.id] = scan.data;
+    laser_data_scene_[scan.id] = convertWorldPointsToScene(scan.data);
     prepareGeometryChange();
     computeBoundRect(laser_data_scene_);
     update();
+}
+
+void LaserItem::updateMap(const OccupancyMap& map)
+{
+    map_ = map;
+    prepareGeometryChange();
+    rebuildSceneLaserData();
+    update();
+}
+
+std::vector<Point> LaserItem::convertWorldPointsToScene(const std::vector<Point>& world_points) const
+{
+    std::vector<Point> scene_points;
+    if (map_.isNULL()) {
+        return scene_points;
+    }
+
+    scene_points.reserve(world_points.size());
+    for (const auto& world_point : world_points) {
+        Point scene_point;
+        map_.worldPose2Scene(world_point.x, world_point.y, scene_point.x, scene_point.y);
+        scene_points.push_back(scene_point);
+    }
+    return scene_points;
+}
+
+void LaserItem::rebuildSceneLaserData()
+{
+    laser_data_scene_.clear();
+    for (const auto& [id, world_points] : laser_data_world_) {
+        laser_data_scene_[id] = convertWorldPointsToScene(world_points);
+    }
+    computeBoundRect(laser_data_scene_);
 }
 
 void LaserItem::drawLaser(QPainter *painter, int id, const std::vector<Point>& data) {
