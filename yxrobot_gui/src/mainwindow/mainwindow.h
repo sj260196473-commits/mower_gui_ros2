@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QLabel>
 #include "channel/channel_manager.h"
 #include "common/common.h"
 
@@ -24,6 +25,7 @@ private slots:
 private:
     Ui::MainWindow *ui;
     std::unique_ptr<ChannelManager> channelManager_;
+    QLabel* mousePositionLabel_{nullptr};
 
     int m_hideLeftIndex = 0;
     int m_hideRightIndex = 0;

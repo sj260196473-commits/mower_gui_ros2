@@ -7,6 +7,37 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    mousePositionLabel_ = new QLabel("Scene: -, -    World: -, -", this);
+    ui->statusbar->addPermanentWidget(mousePositionLabel_);
+
+    connect(
+        ui->graphicsView,
+        &MapGraphicsView::mousePositionChanged,
+        this,
+        [this](const QPointF& scene_pos, const QPointF& world_pos, bool has_world) {
+            if (has_world) {
+                mousePositionLabel_->setText(
+                    QString("Scene: x=%1, y=%2    World: x=%3 m, y=%4 m")
+                        .arg(scene_pos.x(), 0, 'f', 2)
+                        .arg(scene_pos.y(), 0, 'f', 2)
+                        .arg(world_pos.x(), 0, 'f', 3)
+                        .arg(world_pos.y(), 0, 'f', 3));
+            } else {
+                mousePositionLabel_->setText(
+                    QString("Scene: x=%1, y=%2    World: -, -")
+                        .arg(scene_pos.x(), 0, 'f', 2)
+                        .arg(scene_pos.y(), 0, 'f', 2));
+            }
+        });
+
+    connect(
+        ui->graphicsView,
+        &MapGraphicsView::mouseLeftScene,
+        this,
+        [this]() {
+            mousePositionLabel_->setText("Scene: -, -    World: -, -");
+        });
+
     channelManager_ = std::make_unique<ChannelManager>();
 
     auto channel = channelManager_->getChannel();
@@ -42,4 +73,3 @@ void MainWindow::on_hide_left_btn_clicked()
     else
         ui->dockWidget_2->show();
 }
-

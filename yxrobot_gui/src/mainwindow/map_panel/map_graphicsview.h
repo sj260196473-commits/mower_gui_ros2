@@ -7,6 +7,8 @@
 #include "mainwindow/map_panel/laser_layeritem.h"
 #include "mainwindow/map_panel/path_layerItem.h"
 #include "channel/virtual_channel.h"
+#include "common/map_coordinate_transformer.h"
+#include <QEvent>
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QScrollBar>
@@ -25,9 +27,15 @@ protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
+    void leaveEvent(QEvent *event) override;
+
+signals:
+    void mousePositionChanged(const QPointF& scene_pos, const QPointF& world_pos, bool has_world);
+    void mouseLeftScene();
 
 private:
     void focusOnRect(const QRectF& targetRect);
+    void emitMousePosition(const QPoint& view_pos);
 
 private slots:
     void updateMap(const OccupancyMap& map);
@@ -39,6 +47,7 @@ private:
     RobotPoseItem* m_robotPoseItem;
     LaserItem* m_laserScanItem;
     PathLayerItem* m_globalPathItem;
+    MapCoordinateTransformer coordinate_transformer_;
 
 
     QPoint m_lastMousePos;  // 记录上一次鼠标的位置

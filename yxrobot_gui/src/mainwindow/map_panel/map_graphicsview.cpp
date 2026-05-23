@@ -4,6 +4,9 @@
 MapGraphicsView::MapGraphicsView(QWidget* parent) :
     QGraphicsView(parent)
 {
+    setMouseTracking(true);
+    viewport()->setMouseTracking(true);
+
     //初始化地图场景类
     m_qGraphicScene = new QGraphicsScene();
     this->scale(1,-1);//view沿x轴对称翻转，对其世界坐标系
@@ -65,6 +68,7 @@ void MapGraphicsView::setCommChannel(VirtualChannel* channel)
 void MapGraphicsView::updateMap(const OccupancyMap& map)
 {
     if(map.isNULL()) return;
+    coordinate_transformer_.updateMap(map);
 
     // 直接使用像素尺寸作为 Scene 的边界！
     QRectF mapSceneRect(0, 0, map.width(), map.height());
@@ -94,6 +98,8 @@ void MapGraphicsView::focusOnRect(const QRectF& targetRect)
 // 鼠标按下：记录起始点，开启拖拽状态
 void MapGraphicsView::mousePressEvent(QMouseEvent *event)
 {
+    emitMousePosition(event->pos());
+
     // 习惯上：左键或中键都可以拖拽地图 (类似 RViz)
     if (event->button() == Qt::LeftButton || event->button() == Qt::MiddleButton) {
         m_lastMousePos = event->pos();
@@ -109,6 +115,8 @@ void MapGraphicsView::mousePressEvent(QMouseEvent *event)
 // 鼠标移动：计算差值，移动滚动条
 void MapGraphicsView::mouseMoveEvent(QMouseEvent *event)
 {
+    emitMousePosition(event->pos());
+
     if (m_isDragging) {
         // 计算鼠标移动的像素差值
         QPoint delta = event->pos() - m_lastMousePos;
@@ -157,4 +165,26 @@ void MapGraphicsView::wheelEvent(QWheelEvent *event)
     }
 
     QGraphicsView::wheelEvent(event);
+}
+
+void MapGraphicsView::leaveEvent(QEvent *event)
+{
+    emit mouseLeftScene();
+    QGraphicsView::leaveEvent(event);
+}
+
+void MapGraphicsView::emitMousePosition(const QPoint& view_pos)
+{
+    const QPointF scene_pos = mapToScene(view_pos);
+    QPointF world_pos;
+    bool has_world = false;
+
+    if (coordinate_transformer_.isValid()) {
+        const Point scene_point(scene_pos.x(), scene_pos.y());
+        const Point world_point = coordinate_transformer_.sceneToWorld(scene_point);
+        world_pos = QPointF(world_point.x, world_point.y);
+        has_world = true;
+    }
+
+    emit mousePositionChanged(scene_pos, world_pos, has_world);
 }
