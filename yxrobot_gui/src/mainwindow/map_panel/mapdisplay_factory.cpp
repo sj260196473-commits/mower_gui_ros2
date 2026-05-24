@@ -12,17 +12,17 @@ MapLayerItemVirtual* MapDisplayFactory::createDisplay(MapDisplayType type)
 {
     switch (type) {
     case MapDisplayType::OccupancyMap:
-        return new OccMapItem("map.occMap", "occMap", 0);
+        return new OccMapItem("map.occMap", "Occupancy Map", 0);
     case MapDisplayType::GlobalCostMap:
-        return new CostMapItem("map.globalCostMap", "globalCostMap", 10);
+        return new CostMapItem("map.globalCostMap", "Global Cost Map", 10);
     case MapDisplayType::Grid:
-        return new GridLayerItem("grid.grid", "grid", 12);
+        return new GridLayerItem("grid.grid", "Grid", 12);
     case MapDisplayType::RobotPose:
-        return new RobotPoseItem("localization.robot", "robot", 15);
+        return new RobotPoseItem("localization.robot", "Robot Pose", 15);
     case MapDisplayType::LaserScan:
-        return new LaserItem("scan.laser", "laser", 20);
+        return new LaserItem("scan.laser", "Laser Scan", 20);
     case MapDisplayType::GlobalPath:
-        return new PathLayerItem("plan.globalPath", "globalPath", 25);
+        return new PathLayerItem("plan.globalPath", "Global Path", 25);
     }
 
     return nullptr;

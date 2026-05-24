@@ -232,7 +232,6 @@ void MapGraphicsView::showLayerContextMenu(const QPoint& global_pos)
         if (!layer.item) {
             continue;
         }
-
         QAction* action = layerMenu->addAction(layer.name);
         action->setCheckable(true);
         action->setChecked(layer_registry_.isVisible(layer.id));
