@@ -4,11 +4,12 @@
 #include <QGraphicsItem>
 #include <QPainter>
 #include <QRectF>
+#include "map_layeritem_virtual.h"
 
-class GridLayerItem : public QGraphicsItem
+class GridLayerItem : public MapLayerItemVirtual
 {
 public:
-    explicit GridLayerItem(QGraphicsItem* parent = nullptr);
+    explicit GridLayerItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent = nullptr);
 
     QRectF boundingRect() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) override;

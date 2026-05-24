@@ -4,10 +4,11 @@
 #include <algorithm>
 #include <cmath>
 
-GridLayerItem::GridLayerItem(QGraphicsItem* parent)
-    : QGraphicsItem(parent)
+GridLayerItem::GridLayerItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent)
+    : MapLayerItemVirtual(id, name, "grid", parent)
 {
-    setZValue(12);
+    setZValue(z);
+    setAcceptHoverEvents(true);
 }
 
 QRectF GridLayerItem::boundingRect() const

@@ -20,46 +20,32 @@ MapGraphicsView::MapGraphicsView(QWidget* parent) :
     //初始化Item
     m_occMapItem = new OccMapItem("map.occMap", "occMap", 0);
     m_qGraphicScene->addItem(m_occMapItem);
-    registerLayer("Occupancy Map", m_occMapItem);
+    layer_registry_.addLayer(m_occMapItem);
 
     m_globalCostMapItem = new CostMapItem("map.globalCostMap", "globalCostMap", 10);
     m_qGraphicScene->addItem(m_globalCostMapItem);
-    registerLayer("Cost Map", m_globalCostMapItem);
+    layer_registry_.addLayer(m_globalCostMapItem);
 
-    m_gridItem = new GridLayerItem();
+    m_gridItem = new GridLayerItem("grid.grid", "grid", 12);
     m_qGraphicScene->addItem(m_gridItem);
-    registerLayer("Grid", m_gridItem);
+    layer_registry_.addLayer(m_gridItem);
 
     m_robotPoseItem = new RobotPoseItem("localization.robot", "robot", 15);
     m_qGraphicScene->addItem(m_robotPoseItem);
-    registerLayer("Robot", m_robotPoseItem);
+    layer_registry_.addLayer(m_robotPoseItem);
 
     m_laserScanItem = new LaserItem("scan.laser","laser",20);
     m_qGraphicScene->addItem(m_laserScanItem);
-    registerLayer("Laser", m_laserScanItem);
+    layer_registry_.addLayer(m_laserScanItem);
 
     m_globalPathItem = new PathLayerItem("plan.globalPath","globalPath",25);
     m_qGraphicScene->addItem(m_globalPathItem);
-    registerLayer("Global Path", m_globalPathItem);
+    layer_registry_.addLayer(m_globalPathItem);
 
-    this->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
-
-    // // 设置视角交互
-    // this->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate); // 更改为智能刷新，提升性能
-    // this->setDragMode(QGraphicsView::ScrollHandDrag);                // 允许鼠标中键/左键拖拽平移
-    this->setRenderHint(QPainter::Antialiasing);                     // 开启抗锯齿，让轨迹和机器人更平滑
-    // this->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);  // 滚轮缩放以鼠标为中心
+    this->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
+    this->setRenderHint(QPainter::Antialiasing);
 
 
-}
-
-void MapGraphicsView::registerLayer(const QString& name, QGraphicsItem* item)
-{
-    if (!item) {
-        return;
-    }
-
-    layer_entries_.push_back({name, item});
 }
 
 void MapGraphicsView::setCommChannel(VirtualChannel* channel)
@@ -244,18 +230,18 @@ void MapGraphicsView::showLayerContextMenu(const QPoint& global_pos)
     QMenu menu(this);
     QMenu* layerMenu = menu.addMenu("Layers");
 
-    for (const LayerEntry& layer : layer_entries_) {
+    for (const MapLayerEntry& layer : layer_registry_.layers()) {
         if (!layer.item) {
             continue;
         }
 
         QAction* action = layerMenu->addAction(layer.name);
         action->setCheckable(true);
-        action->setChecked(layer.item->isVisible());
+        action->setChecked(layer_registry_.isVisible(layer.id));
 
-        QGraphicsItem* item = layer.item;
-        connect(action, &QAction::toggled, this, [item](bool checked) {
-            item->setVisible(checked);
+        const QString layerId = layer.id;
+        connect(action, &QAction::toggled, this, [this, layerId](bool checked) {
+            layer_registry_.setVisible(layerId, checked);
         });
     }
 
