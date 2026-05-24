@@ -8,6 +8,7 @@
 #include "mainwindow/map_panel/laser_layeritem.h"
 #include "mainwindow/map_panel/path_layerItem.h"
 #include "mainwindow/map_panel/map_layer_registry.h"
+#include "mainwindow/map_panel/mapdisplay_factory.h"
 #include "channel/virtual_channel.h"
 #include "common/map_coordinate_transformer.h"
 #include <QEvent>
@@ -42,6 +43,7 @@ signals:
     void gridCellLengthChanged(double length_m);
 
 private:
+    void addLayerToScene(MapLayerItemVirtual* layer);
     void showLayerContextMenu(const QPoint& global_pos);
     void focusOnRect(const QRectF& targetRect);
     void emitMousePosition(const QPoint& view_pos);

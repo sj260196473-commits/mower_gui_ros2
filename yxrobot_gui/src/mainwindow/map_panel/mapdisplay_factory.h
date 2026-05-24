@@ -2,6 +2,18 @@
 #define MAPDISPLAY_FACTORY_H
 
 #include <QObject>
+#include <QVector>
+#include "mainwindow/map_panel/map_layeritem_virtual.h"
+
+enum class MapDisplayType
+{
+    OccupancyMap,
+    GlobalCostMap,
+    Grid,
+    RobotPose,
+    LaserScan,
+    GlobalPath
+};
 
 class MapDisplayFactory : public QObject
 {
@@ -12,6 +24,9 @@ public:
         return factory;
     }
     MapDisplayFactory();
+
+    MapLayerItemVirtual* createDisplay(MapDisplayType type);
+    QVector<MapLayerItemVirtual*> createDefaultDisplays();
 };
 
 #endif // MAPDISPLAY_FACTORY_H

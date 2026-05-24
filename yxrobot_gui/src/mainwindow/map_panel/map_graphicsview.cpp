@@ -17,35 +17,33 @@ MapGraphicsView::MapGraphicsView(QWidget* parent) :
     this->setScene(m_qGraphicScene);
     this->setBackgroundBrush(QColor(48, 48, 48));
 
-    //初始化Item
-    m_occMapItem = new OccMapItem("map.occMap", "occMap", 0);
-    m_qGraphicScene->addItem(m_occMapItem);
-    layer_registry_.addLayer(m_occMapItem);
+    //创建默认的地图显示图层
+    auto* factory = MapDisplayFactory::Instance();
+    for (MapLayerItemVirtual* layer : factory->createDefaultDisplays()) {
+        addLayerToScene(layer);
+    }
 
-    m_globalCostMapItem = new CostMapItem("map.globalCostMap", "globalCostMap", 10);
-    m_qGraphicScene->addItem(m_globalCostMapItem);
-    layer_registry_.addLayer(m_globalCostMapItem);
-
-    m_gridItem = new GridLayerItem("grid.grid", "grid", 12);
-    m_qGraphicScene->addItem(m_gridItem);
-    layer_registry_.addLayer(m_gridItem);
-
-    m_robotPoseItem = new RobotPoseItem("localization.robot", "robot", 15);
-    m_qGraphicScene->addItem(m_robotPoseItem);
-    layer_registry_.addLayer(m_robotPoseItem);
-
-    m_laserScanItem = new LaserItem("scan.laser","laser",20);
-    m_qGraphicScene->addItem(m_laserScanItem);
-    layer_registry_.addLayer(m_laserScanItem);
-
-    m_globalPathItem = new PathLayerItem("plan.globalPath","globalPath",25);
-    m_qGraphicScene->addItem(m_globalPathItem);
-    layer_registry_.addLayer(m_globalPathItem);
+    m_occMapItem = dynamic_cast<OccMapItem*>(layer_registry_.layer("map.occMap"));
+    m_globalCostMapItem = dynamic_cast<CostMapItem*>(layer_registry_.layer("map.globalCostMap"));
+    m_gridItem = dynamic_cast<GridLayerItem*>(layer_registry_.layer("grid.grid"));
+    m_robotPoseItem = dynamic_cast<RobotPoseItem*>(layer_registry_.layer("localization.robot"));
+    m_laserScanItem = dynamic_cast<LaserItem*>(layer_registry_.layer("scan.laser"));
+    m_globalPathItem = dynamic_cast<PathLayerItem*>(layer_registry_.layer("plan.globalPath"));
 
     this->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
     this->setRenderHint(QPainter::Antialiasing);
 
 
+}
+
+void MapGraphicsView::addLayerToScene(MapLayerItemVirtual* layer)
+{
+    if (!layer) {
+        return;
+    }
+
+    m_qGraphicScene->addItem(layer);
+    layer_registry_.addLayer(layer);
 }
 
 void MapGraphicsView::setCommChannel(VirtualChannel* channel)
