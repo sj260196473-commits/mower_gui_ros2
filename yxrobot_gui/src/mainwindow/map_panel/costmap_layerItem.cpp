@@ -4,7 +4,7 @@ CostMapItem::CostMapItem(const QString& id,
                         const QString& name,
                         const int& z,
                         QGraphicsItem* parent)
-    :MapLayerItemVirtual(id,name,"map",parent)
+    :MapLayerBase(id,name,"map",parent)
 {
     setZValue(z);
 }

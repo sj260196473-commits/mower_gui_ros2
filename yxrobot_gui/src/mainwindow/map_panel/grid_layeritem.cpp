@@ -5,7 +5,7 @@
 #include <cmath>
 
 GridLayerItem::GridLayerItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent)
-    : MapLayerItemVirtual(id, name, "grid", parent)
+    : MapLayerBase(id, name, "grid", parent)
 {
     setZValue(z);
     setAcceptHoverEvents(true);

@@ -8,7 +8,7 @@
 
 MapDisplayFactory::MapDisplayFactory() {}
 
-MapLayerItemVirtual* MapDisplayFactory::createDisplay(MapDisplayType type)
+MapLayerBase* MapDisplayFactory::createDisplay(MapDisplayType type)
 {
     switch (type) {
     case MapDisplayType::OccupancyMap:
@@ -28,7 +28,7 @@ MapLayerItemVirtual* MapDisplayFactory::createDisplay(MapDisplayType type)
     return nullptr;
 }
 
-QVector<MapLayerItemVirtual*> MapDisplayFactory::createDefaultDisplays()
+QVector<MapLayerBase*> MapDisplayFactory::createDefaultDisplays()
 {
     return {
         createDisplay(MapDisplayType::OccupancyMap),

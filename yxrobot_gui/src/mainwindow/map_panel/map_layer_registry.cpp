@@ -1,6 +1,6 @@
 #include "mainwindow/map_panel/map_layer_registry.h"
 
-void MapLayerRegistry::addLayer(MapLayerItemVirtual* layer)
+void MapLayerRegistry::addLayer(MapLayerBase* layer)
 {
     if (!layer) {
         return;
@@ -23,7 +23,7 @@ const QVector<MapLayerEntry>& MapLayerRegistry::layers() const
     return layers_;
 }
 
-MapLayerItemVirtual* MapLayerRegistry::layer(const QString& id) const
+MapLayerBase* MapLayerRegistry::layer(const QString& id) const
 {
     for (const MapLayerEntry& entry : layers_) {
         if (entry.id == id) {
@@ -36,7 +36,7 @@ MapLayerItemVirtual* MapLayerRegistry::layer(const QString& id) const
 
 void MapLayerRegistry::setVisible(const QString& id, bool visible)
 {
-    MapLayerItemVirtual* item = layer(id);
+    MapLayerBase* item = layer(id);
     if (!item) {
         return;
     }
@@ -46,6 +46,6 @@ void MapLayerRegistry::setVisible(const QString& id, bool visible)
 
 bool MapLayerRegistry::isVisible(const QString& id) const
 {
-    MapLayerItemVirtual* item = layer(id);
+    MapLayerBase* item = layer(id);
     return item ? item->isVisible() : false;
 }

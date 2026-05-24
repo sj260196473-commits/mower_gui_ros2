@@ -10,7 +10,7 @@
 #include "common/map_coordinate_transformer.h"
 #include "mainwindow/map_panel/map_layeritem_virtual.h"
 
-class RobotPoseItem : public MapLayerItemVirtual
+class RobotPoseItem : public MapLayerBase
 {
     Q_OBJECT
 public:

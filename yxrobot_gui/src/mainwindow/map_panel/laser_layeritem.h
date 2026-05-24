@@ -10,7 +10,7 @@
 #include <map>
 
 
-class LaserItem : public MapLayerItemVirtual
+class LaserItem : public MapLayerBase
 {
 public:
     LaserItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent = nullptr);

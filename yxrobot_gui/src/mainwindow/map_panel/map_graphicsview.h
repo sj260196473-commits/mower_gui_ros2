@@ -1,14 +1,7 @@
 #ifndef MAP_GRAPHICSVIEW_H
 #define MAP_GRAPHICSVIEW_H
 #include <QGraphicsView>
-#include "mainwindow/map_panel/occmap_layerItem.h"
-#include "mainwindow/map_panel/costmap_layerItem.h"
-#include "mainwindow/map_panel/grid_layeritem.h"
-#include "mainwindow/map_panel/robotpose_layerItem.h"
-#include "mainwindow/map_panel/laser_layeritem.h"
-#include "mainwindow/map_panel/path_layerItem.h"
-#include "mainwindow/map_panel/map_layer_registry.h"
-#include "mainwindow/map_panel/mapdisplay_factory.h"
+#include "mainwindow/map_panel/map_layer_runtime.h"
 #include "channel/virtual_channel.h"
 #include "common/map_coordinate_transformer.h"
 #include <QEvent>
@@ -17,6 +10,7 @@
 #include <QContextMenuEvent>
 #include <QScrollBar>
 #include <QDebug>
+#include <memory>
 
 class MapGraphicsView: public QGraphicsView
 {
@@ -43,7 +37,6 @@ signals:
     void gridCellLengthChanged(double length_m);
 
 private:
-    void addLayerToScene(MapLayerItemVirtual* layer);
     void showLayerContextMenu(const QPoint& global_pos);
     void focusOnRect(const QRectF& targetRect);
     void emitMousePosition(const QPoint& view_pos);
@@ -55,14 +48,8 @@ private slots:
 
 private:
     QGraphicsScene* m_qGraphicScene;
-    OccMapItem* m_occMapItem;
-    CostMapItem* m_globalCostMapItem;
-    GridLayerItem* m_gridItem;
-    RobotPoseItem* m_robotPoseItem;
-    LaserItem* m_laserScanItem;
-    PathLayerItem* m_globalPathItem;
+    std::unique_ptr<MapLayerRuntime> layer_runtime_;
     MapCoordinateTransformer coordinate_transformer_;
-    MapLayerRegistry layer_registry_;
     QRectF current_map_scene_rect_;
 
 

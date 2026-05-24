@@ -1,9 +1,17 @@
 #include "mainwindow/map_panel/map_graphicsview.h"
+#include "mainwindow/map_panel/grid_layeritem.h"
 #include <QAction>
 #include <QMenu>
 #include <QPainter>
 #include <algorithm>
 #include <cmath>
+
+namespace
+{
+constexpr double kGridCellPixelLength = 80.0;
+constexpr double kMinViewScale = 0.01;
+constexpr double kScaleStep = 1.15;
+}
 
 MapGraphicsView::MapGraphicsView(QWidget* parent) :
     QGraphicsView(parent)
@@ -17,33 +25,13 @@ MapGraphicsView::MapGraphicsView(QWidget* parent) :
     this->setScene(m_qGraphicScene);
     this->setBackgroundBrush(QColor(48, 48, 48));
 
-    //创建默认的地图显示图层
-    auto* factory = MapDisplayFactory::Instance();
-    for (MapLayerItemVirtual* layer : factory->createDefaultDisplays()) {
-        addLayerToScene(layer);
-    }
-
-    m_occMapItem = dynamic_cast<OccMapItem*>(layer_registry_.layer("map.occMap"));
-    m_globalCostMapItem = dynamic_cast<CostMapItem*>(layer_registry_.layer("map.globalCostMap"));
-    m_gridItem = dynamic_cast<GridLayerItem*>(layer_registry_.layer("grid.grid"));
-    m_robotPoseItem = dynamic_cast<RobotPoseItem*>(layer_registry_.layer("localization.robot"));
-    m_laserScanItem = dynamic_cast<LaserItem*>(layer_registry_.layer("scan.laser"));
-    m_globalPathItem = dynamic_cast<PathLayerItem*>(layer_registry_.layer("plan.globalPath"));
+    layer_runtime_ = std::make_unique<MapLayerRuntime>();
+    layer_runtime_->initializeDefaultLayers(m_qGraphicScene);
 
     this->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
     this->setRenderHint(QPainter::Antialiasing);
 
 
-}
-
-void MapGraphicsView::addLayerToScene(MapLayerItemVirtual* layer)
-{
-    if (!layer) {
-        return;
-    }
-
-    m_qGraphicScene->addItem(layer);
-    layer_registry_.addLayer(layer);
 }
 
 void MapGraphicsView::setCommChannel(VirtualChannel* channel)
@@ -52,24 +40,10 @@ void MapGraphicsView::setCommChannel(VirtualChannel* channel)
         return;
     }
 
-    connect(channel, &VirtualChannel::emitUpdateMap,
-            m_occMapItem, &OccMapItem::updateMap, Qt::QueuedConnection);
-    connect(channel, &VirtualChannel::emitUpdateMap,
-            m_robotPoseItem, &RobotPoseItem::updateMap, Qt::QueuedConnection);
-    connect(channel, &VirtualChannel::emitUpdateMap,
-            m_laserScanItem, &LaserItem::updateMap, Qt::QueuedConnection);
-    connect(channel, &VirtualChannel::emitUpdateMap,
-            m_globalPathItem, &PathLayerItem::updateMap, Qt::QueuedConnection);
+    layer_runtime_->bindChannel(channel);
+
     connect(channel, &VirtualChannel::emitUpdateMap,
             this, &MapGraphicsView::updateMap, Qt::QueuedConnection);
-    connect(channel, &VirtualChannel::emitUpdateGlobalCostMap,
-            m_globalCostMapItem, &CostMapItem::updateMap, Qt::QueuedConnection);
-    connect(channel, &VirtualChannel::emitUpdateRobotPose,
-            m_robotPoseItem, &RobotPoseItem::updatePose, Qt::QueuedConnection);
-    connect(channel, &VirtualChannel::emitUpdateLaserScan,
-            m_laserScanItem, &LaserItem::UpdateLaserData, Qt::QueuedConnection);
-    connect(channel, &VirtualChannel::emitUpdatePath,
-            m_globalPathItem, &PathLayerItem::UpdatePath, Qt::QueuedConnection);
 }
 
 void MapGraphicsView::focusMapView()
@@ -96,7 +70,9 @@ void MapGraphicsView::updateMap(const OccupancyMap& map)
         margin);
 
     m_qGraphicScene->setSceneRect(interactionSceneRect);
-    m_gridItem->setSceneRect(interactionSceneRect);
+    if (layer_runtime_->gridLayer()) {
+        layer_runtime_->gridLayer()->setSceneRect(interactionSceneRect);
+    }
 
     if (!has_initial_map_focus_) {
         focusMapView();
@@ -181,15 +157,13 @@ void MapGraphicsView::wheelEvent(QWheelEvent *event)
     }
 
     const double currentScale = transform().m11();
-    const double scaleStep = 1.15;
-    const double minScale = 0.01;
-    const double maxScale = 20.0;
+    const double maxScale = kGridCellPixelLength;
 
     double scaleFactor = 1.0;
     if (wheelDelta > 0 && currentScale < maxScale) {
-        scaleFactor = scaleStep;
-    } else if (wheelDelta < 0 && currentScale > minScale) {
-        scaleFactor = 1.0 / scaleStep;
+        scaleFactor = std::min(kScaleStep, maxScale / currentScale);
+    } else if (wheelDelta < 0 && currentScale > kMinViewScale) {
+        scaleFactor = std::max(1.0 / kScaleStep, kMinViewScale / currentScale);
     }
 
     if (scaleFactor == 1.0) {
@@ -227,18 +201,19 @@ void MapGraphicsView::showLayerContextMenu(const QPoint& global_pos)
 {
     QMenu menu(this);
     QMenu* layerMenu = menu.addMenu("Layers");
+    auto& registry = layer_runtime_->registry();
 
-    for (const MapLayerEntry& layer : layer_registry_.layers()) {
+    for (const MapLayerEntry& layer : registry.layers()) {
         if (!layer.item) {
             continue;
         }
         QAction* action = layerMenu->addAction(layer.name);
         action->setCheckable(true);
-        action->setChecked(layer_registry_.isVisible(layer.id));
+        action->setChecked(registry.isVisible(layer.id));
 
         const QString layerId = layer.id;
         connect(action, &QAction::toggled, this, [this, layerId](bool checked) {
-            layer_registry_.setVisible(layerId, checked);
+            layer_runtime_->registry().setVisible(layerId, checked);
         });
     }
 
@@ -277,7 +252,9 @@ void MapGraphicsView::updateGridCellLengthStatus()
     }
 
     current_grid_cell_length_m_ = length;
-    m_gridItem->setGridSceneLength(gridSize);
+    if (layer_runtime_->gridLayer()) {
+        layer_runtime_->gridLayer()->setGridSceneLength(gridSize);
+    }
     emit gridCellLengthChanged(current_grid_cell_length_m_);
 }
 
@@ -292,6 +269,5 @@ double MapGraphicsView::gridCellSceneLength() const
         return 0.0;
     }
 
-    const double targetPixelLength = 80.0;
-    return targetPixelLength / pixelsPerSceneUnit;
+    return kGridCellPixelLength / pixelsPerSceneUnit;
 }

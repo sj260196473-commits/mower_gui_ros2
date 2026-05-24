@@ -1,0 +1,93 @@
+#include "mainwindow/map_panel/map_layer_runtime.h"
+
+#include <QObject>
+#include "mainwindow/map_panel/costmap_layerItem.h"
+#include "mainwindow/map_panel/grid_layeritem.h"
+#include "mainwindow/map_panel/laser_layeritem.h"
+#include "mainwindow/map_panel/mapdisplay_factory.h"
+#include "mainwindow/map_panel/occmap_layerItem.h"
+#include "mainwindow/map_panel/path_layerItem.h"
+#include "mainwindow/map_panel/robotpose_layerItem.h"
+
+void MapLayerRuntime::initializeDefaultLayers(QGraphicsScene* scene)
+{
+    if (!scene) {
+        return;
+    }
+
+    auto* factory = MapDisplayFactory::Instance();
+    for (MapLayerBase* layer : factory->createDefaultDisplays()) {
+        addLayerToScene(scene, layer);
+    }
+
+    resolveDefaultLayerPointers();
+}
+
+void MapLayerRuntime::bindChannel(VirtualChannel* channel)
+{
+    if (!channel) {
+        return;
+    }
+
+    if (occMapItem_) {
+        QObject::connect(channel, &VirtualChannel::emitUpdateMap,
+                         occMapItem_, &OccMapItem::updateMap, Qt::QueuedConnection);
+    }
+    if (robotPoseItem_) {
+        QObject::connect(channel, &VirtualChannel::emitUpdateMap,
+                         robotPoseItem_, &RobotPoseItem::updateMap, Qt::QueuedConnection);
+        QObject::connect(channel, &VirtualChannel::emitUpdateRobotPose,
+                         robotPoseItem_, &RobotPoseItem::updatePose, Qt::QueuedConnection);
+    }
+    if (laserScanItem_) {
+        QObject::connect(channel, &VirtualChannel::emitUpdateMap,
+                         laserScanItem_, &LaserItem::updateMap, Qt::QueuedConnection);
+        QObject::connect(channel, &VirtualChannel::emitUpdateLaserScan,
+                         laserScanItem_, &LaserItem::UpdateLaserData, Qt::QueuedConnection);
+    }
+    if (globalPathItem_) {
+        QObject::connect(channel, &VirtualChannel::emitUpdateMap,
+                         globalPathItem_, &PathLayerItem::updateMap, Qt::QueuedConnection);
+        QObject::connect(channel, &VirtualChannel::emitUpdatePath,
+                         globalPathItem_, &PathLayerItem::UpdatePath, Qt::QueuedConnection);
+    }
+    if (globalCostMapItem_) {
+        QObject::connect(channel, &VirtualChannel::emitUpdateGlobalCostMap,
+                         globalCostMapItem_, &CostMapItem::updateMap, Qt::QueuedConnection);
+    }
+}
+
+MapLayerRegistry& MapLayerRuntime::registry()
+{
+    return registry_;
+}
+
+const MapLayerRegistry& MapLayerRuntime::registry() const
+{
+    return registry_;
+}
+
+GridLayerItem* MapLayerRuntime::gridLayer() const
+{
+    return gridItem_;
+}
+
+void MapLayerRuntime::addLayerToScene(QGraphicsScene* scene, MapLayerBase* layer)
+{
+    if (!scene || !layer) {
+        return;
+    }
+
+    scene->addItem(layer);
+    registry_.addLayer(layer);
+}
+
+void MapLayerRuntime::resolveDefaultLayerPointers()
+{
+    occMapItem_ = registry_.layerAs<OccMapItem>("map.occMap");
+    globalCostMapItem_ = registry_.layerAs<CostMapItem>("map.globalCostMap");
+    gridItem_ = registry_.layerAs<GridLayerItem>("grid.grid");
+    robotPoseItem_ = registry_.layerAs<RobotPoseItem>("localization.robot");
+    laserScanItem_ = registry_.layerAs<LaserItem>("scan.laser");
+    globalPathItem_ = registry_.layerAs<PathLayerItem>("plan.globalPath");
+}

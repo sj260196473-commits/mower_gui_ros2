@@ -6,7 +6,7 @@
 #include <QRectF>
 #include "map_layeritem_virtual.h"
 
-class GridLayerItem : public MapLayerItemVirtual
+class GridLayerItem : public MapLayerBase
 {
 public:
     explicit GridLayerItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent = nullptr);

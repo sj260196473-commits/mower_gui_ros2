@@ -1,7 +1,7 @@
 #include "occmap_layerItem.h"
 
 OccMapItem::OccMapItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent)
-    :MapLayerItemVirtual(id,name,"map",parent)
+    :MapLayerBase(id,name,"map",parent)
 {
     setZValue(z);
     setAcceptHoverEvents(true);

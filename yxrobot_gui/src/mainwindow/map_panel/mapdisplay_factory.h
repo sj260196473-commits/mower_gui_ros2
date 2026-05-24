@@ -25,8 +25,8 @@ public:
     }
     MapDisplayFactory();
 
-    MapLayerItemVirtual* createDisplay(MapDisplayType type);
-    QVector<MapLayerItemVirtual*> createDefaultDisplays();
+    MapLayerBase* createDisplay(MapDisplayType type);
+    QVector<MapLayerBase*> createDefaultDisplays();
 };
 
 #endif // MAPDISPLAY_FACTORY_H

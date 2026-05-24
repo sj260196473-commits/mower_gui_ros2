@@ -9,7 +9,7 @@
 #include <QGraphicsItem>
 #include <QGraphicsSceneWheelEvent>
 
-class PathLayerItem : public MapLayerItemVirtual
+class PathLayerItem : public MapLayerBase
 {
     Q_OBJECT
 public:

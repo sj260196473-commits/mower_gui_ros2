@@ -19,7 +19,7 @@ inline QRgb occMapRgbaForOccupancy(double occupancy)
     return qRgba(255, 255, 255, 255);
 }
 
-class OccMapItem : public MapLayerItemVirtual
+class OccMapItem : public MapLayerBase
 {
     Q_OBJECT
 public:

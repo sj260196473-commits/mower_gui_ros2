@@ -1,15 +1,15 @@
-#ifndef MAP_LAYERITEM_VIRTUAL_H
-#define MAP_LAYERITEM_VIRTUAL_H
+#ifndef MAP_LAYER_BASE_H
+#define MAP_LAYER_BASE_H
 #include <QGraphicsObject>
 
-class MapLayerItemVirtual : public QGraphicsObject
+class MapLayerBase : public QGraphicsObject
 {
     Q_OBJECT
 public:
-    explicit MapLayerItemVirtual(const QString& layerId,
-                                 const QString& layerName,
-                                 const QString& layerGroup,
-                                 QGraphicsItem* parent = nullptr);
+    explicit MapLayerBase(const QString& layerId,
+                          const QString& layerName,
+                          const QString& layerGroup,
+                          QGraphicsItem* parent = nullptr);
 
     QString getLayerId() const{return m_layerId;}
     QString getLayerName() const{return m_layerName;}
@@ -21,4 +21,4 @@ private:
     QString m_layerName;
 };
 
-#endif // MAP_LAYERITEM_VIRTUAL_H
+#endif // MAP_LAYER_BASE_H

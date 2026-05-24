@@ -2,7 +2,7 @@
 #include <iostream>
 
 LaserItem::LaserItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent)
-    :MapLayerItemVirtual(id,name,"scan",parent)
+    :MapLayerBase(id,name,"scan",parent)
 {
     setZValue(z);
     setAcceptHoverEvents(true);

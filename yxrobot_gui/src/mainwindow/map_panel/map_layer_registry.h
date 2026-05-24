@@ -10,16 +10,22 @@ struct MapLayerEntry
     QString id;
     QString name;
     QString group;
-    MapLayerItemVirtual* item{nullptr};
+    MapLayerBase* item{nullptr};
 };
 
 class MapLayerRegistry
 {
 public:
-    void addLayer(MapLayerItemVirtual* layer);
+    void addLayer(MapLayerBase* layer);
 
     const QVector<MapLayerEntry>& layers() const;
-    MapLayerItemVirtual* layer(const QString& id) const;
+    MapLayerBase* layer(const QString& id) const;
+
+    template<typename T>
+    T* layerAs(const QString& id) const
+    {
+        return dynamic_cast<T*>(layer(id));
+    }
 
     void setVisible(const QString& id, bool visible);
     bool isVisible(const QString& id) const;

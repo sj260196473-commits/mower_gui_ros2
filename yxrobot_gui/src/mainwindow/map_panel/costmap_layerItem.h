@@ -37,7 +37,7 @@ inline QRgb costMapRgbaForCost(int cost)
     return qRgba(0, 0, 0, 0);
 }
 
-class CostMapItem : public MapLayerItemVirtual
+class CostMapItem : public MapLayerBase
 {
     Q_OBJECT
 public:

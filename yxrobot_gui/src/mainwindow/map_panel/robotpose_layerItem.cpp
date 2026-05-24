@@ -1,7 +1,7 @@
 #include "robotpose_layerItem.h"
 
 RobotPoseItem::RobotPoseItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent)
-    :MapLayerItemVirtual(id,name,"localization",parent)
+    :MapLayerBase(id,name,"localization",parent)
 {
     setZValue(z);
     setAcceptHoverEvents(true);
