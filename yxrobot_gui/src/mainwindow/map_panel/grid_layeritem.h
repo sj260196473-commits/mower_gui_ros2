@@ -6,6 +6,9 @@
 #include <QRectF>
 #include "map_layeritem_virtual.h"
 
+namespace silverstar {
+namespace map_panel {
+
 class GridLayerItem : public MapLayerBase
 {
 public:
@@ -21,5 +24,8 @@ private:
     QRectF scene_rect_;
     double grid_scene_length_{0.0};
 };
+
+}  // namespace map_panel
+}  // namespace silverstar
 
 #endif // GRID_LAYERITEM_H

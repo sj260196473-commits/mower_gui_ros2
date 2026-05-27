@@ -4,6 +4,9 @@
 #include <algorithm>
 #include <cmath>
 
+namespace silverstar {
+namespace map_panel {
+
 GridLayerItem::GridLayerItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent)
     : MapLayerBase(id, name, "grid", parent)
 {
@@ -79,3 +82,6 @@ void GridLayerItem::setSceneRect(const QRectF& rect)
     scene_rect_ = rect;
     update();
 }
+
+}  // namespace map_panel
+}  // namespace silverstar

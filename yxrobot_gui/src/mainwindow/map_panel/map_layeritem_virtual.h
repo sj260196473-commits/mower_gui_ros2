@@ -2,6 +2,9 @@
 #define MAP_LAYER_BASE_H
 #include <QGraphicsObject>
 
+namespace silverstar {
+namespace map_panel {
+
 class MapLayerBase : public QGraphicsObject
 {
     Q_OBJECT
@@ -20,5 +23,8 @@ private:
     QString m_layerGroup;
     QString m_layerName;
 };
+
+}  // namespace map_panel
+}  // namespace silverstar
 
 #endif // MAP_LAYER_BASE_H

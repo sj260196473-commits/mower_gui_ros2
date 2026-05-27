@@ -7,6 +7,9 @@
 #include "mainwindow/map_panel/map_layeritem_virtual.h"
 #include "common/common.h"
 
+namespace silverstar {
+namespace map_panel {
+
 inline QRgb occMapRgbaForOccupancy(double occupancy)
 {
     if (occupancy > 0) {
@@ -35,5 +38,8 @@ public slots:
 private:
     QImage m_map_image;
 };
+
+}  // namespace map_panel
+}  // namespace silverstar
 
 #endif // OCCMAP_LAYERITEM_H

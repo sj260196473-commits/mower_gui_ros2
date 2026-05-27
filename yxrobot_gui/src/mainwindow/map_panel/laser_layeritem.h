@@ -9,6 +9,8 @@
 #include <QGraphicsSceneWheelEvent>
 #include <map>
 
+namespace silverstar {
+namespace map_panel {
 
 class LaserItem : public MapLayerBase
 {
@@ -34,5 +36,8 @@ private:
     std::map<int, std::vector<Point>> laser_data_scene_;
     QRectF bounding_rect_;
 };
+
+}  // namespace map_panel
+}  // namespace silverstar
 
 #endif // LASER_LAYERITEM_H

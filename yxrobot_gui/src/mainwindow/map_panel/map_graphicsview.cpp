@@ -6,6 +6,9 @@
 #include <algorithm>
 #include <cmath>
 
+namespace silverstar {
+namespace map_panel {
+
 namespace
 {
 constexpr double kGridCellPixelLength = 80.0;
@@ -271,3 +274,6 @@ double MapGraphicsView::gridCellSceneLength() const
 
     return kGridCellPixelLength / pixelsPerSceneUnit;
 }
+
+}  // namespace map_panel
+}  // namespace silverstar

@@ -1,5 +1,8 @@
 #include "mainwindow/map_panel/map_layer_registry.h"
 
+namespace silverstar {
+namespace map_panel {
+
 void MapLayerRegistry::addLayer(MapLayerBase* layer)
 {
     if (!layer) {
@@ -49,3 +52,6 @@ bool MapLayerRegistry::isVisible(const QString& id) const
     MapLayerBase* item = layer(id);
     return item ? item->isVisible() : false;
 }
+
+}  // namespace map_panel
+}  // namespace silverstar

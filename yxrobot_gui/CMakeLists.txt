@@ -46,6 +46,8 @@ set(PRO_INCLUDE_DIR
   src/mainwindow/map_panel/laser_layeritem.h
   src/mainwindow/map_panel/mapdisplay_factory.h
   src/mainwindow/map_panel/map_graphicsview.h
+  src/mainwindow/map_panel/map_layer_registry.h
+  src/mainwindow/map_panel/map_layer_runtime.h
   src/mainwindow/map_panel/map_layeritem_virtual.h
   src/mainwindow/map_panel/occmap_layerItem.h
   src/mainwindow/map_panel/robotpose_layerItem.h
@@ -61,6 +63,8 @@ set(PRO_SOURCES_DIR
   src/mainwindow/map_panel/laser_layeritem.cpp
   src/mainwindow/map_panel/mapdisplay_factory.cpp
   src/mainwindow/map_panel/map_graphicsview.cpp
+  src/mainwindow/map_panel/map_layer_registry.cpp
+  src/mainwindow/map_panel/map_layer_runtime.cpp
   src/mainwindow/map_panel/map_layerItem_virtual.cpp
   src/mainwindow/map_panel/occmap_layerItem.cpp
   src/mainwindow/map_panel/robotpose_layerItem.cpp

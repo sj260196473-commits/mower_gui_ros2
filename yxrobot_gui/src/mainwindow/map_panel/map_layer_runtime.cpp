@@ -9,6 +9,9 @@
 #include "mainwindow/map_panel/path_layerItem.h"
 #include "mainwindow/map_panel/robotpose_layerItem.h"
 
+namespace silverstar {
+namespace map_panel {
+
 void MapLayerRuntime::initializeDefaultLayers(QGraphicsScene* scene)
 {
     if (!scene) {
@@ -91,3 +94,6 @@ void MapLayerRuntime::resolveDefaultLayerPointers()
     laserScanItem_ = registry_.layerAs<LaserItem>("scan.laser");
     globalPathItem_ = registry_.layerAs<PathLayerItem>("plan.globalPath");
 }
+
+}  // namespace map_panel
+}  // namespace silverstar

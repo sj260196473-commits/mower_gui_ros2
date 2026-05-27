@@ -5,6 +5,9 @@
 #include <QVector>
 #include "mainwindow/map_panel/map_layeritem_virtual.h"
 
+namespace silverstar {
+namespace map_panel {
+
 enum class MapDisplayType
 {
     OccupancyMap,
@@ -28,5 +31,8 @@ public:
     MapLayerBase* createDisplay(MapDisplayType type);
     QVector<MapLayerBase*> createDefaultDisplays();
 };
+
+}  // namespace map_panel
+}  // namespace silverstar
 
 #endif // MAPDISPLAY_FACTORY_H

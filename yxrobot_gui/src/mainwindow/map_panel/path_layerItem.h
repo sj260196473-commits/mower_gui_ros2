@@ -9,6 +9,9 @@
 #include <QGraphicsItem>
 #include <QGraphicsSceneWheelEvent>
 
+namespace silverstar {
+namespace map_panel {
+
 class PathLayerItem : public MapLayerBase
 {
     Q_OBJECT
@@ -32,5 +35,8 @@ private:
     Path current_path_world_;
     Path current_path_scene_;
 };
+
+}  // namespace map_panel
+}  // namespace silverstar
 
 #endif // PATH_LAYERITEM_H

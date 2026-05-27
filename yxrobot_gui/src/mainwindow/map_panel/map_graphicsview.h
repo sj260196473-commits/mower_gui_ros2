@@ -12,6 +12,9 @@
 #include <QDebug>
 #include <memory>
 
+namespace silverstar {
+namespace map_panel {
+
 class MapGraphicsView: public QGraphicsView
 {
     Q_OBJECT
@@ -58,5 +61,8 @@ private:
     bool has_initial_map_focus_{false};
     double current_grid_cell_length_m_{0.0};
 };
+
+}  // namespace map_panel
+}  // namespace silverstar
 
 #endif // MAP_GRAPHICSVIEW_H

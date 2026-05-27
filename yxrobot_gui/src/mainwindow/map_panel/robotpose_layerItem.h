@@ -10,6 +10,9 @@
 #include "common/map_coordinate_transformer.h"
 #include "mainwindow/map_panel/map_layeritem_virtual.h"
 
+namespace silverstar {
+namespace map_panel {
+
 class RobotPoseItem : public MapLayerBase
 {
     Q_OBJECT
@@ -33,5 +36,8 @@ private:
     double m_robotActualHeight_m = 1.0; // 机器人实际长度（米），例如 0.5m
     QPixmap m_originalImg; // 缓存原始图片，防止多次缩放导致失真
 };
+
+}  // namespace map_panel
+}  // namespace silverstar
 
 #endif // ROBOTPOSE_LAYERITEM_H

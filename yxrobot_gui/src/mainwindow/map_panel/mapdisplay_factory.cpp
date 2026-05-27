@@ -6,6 +6,9 @@
 #include "mainwindow/map_panel/path_layerItem.h"
 #include "mainwindow/map_panel/robotpose_layerItem.h"
 
+namespace silverstar {
+namespace map_panel {
+
 MapDisplayFactory::MapDisplayFactory() {}
 
 MapLayerBase* MapDisplayFactory::createDisplay(MapDisplayType type)
@@ -39,3 +42,6 @@ QVector<MapLayerBase*> MapDisplayFactory::createDefaultDisplays()
         createDisplay(MapDisplayType::GlobalPath)
     };
 }
+
+}  // namespace map_panel
+}  // namespace silverstar

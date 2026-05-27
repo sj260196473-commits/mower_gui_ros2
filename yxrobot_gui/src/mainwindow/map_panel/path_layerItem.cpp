@@ -1,5 +1,8 @@
 #include "path_layerItem.h"
 
+namespace silverstar {
+namespace map_panel {
+
 PathLayerItem::PathLayerItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent)
     : MapLayerBase(id, name, "path", parent)
 {
@@ -93,3 +96,6 @@ void PathLayerItem::drawPath(QPainter *painter, const Path& path)
     }
     painter->drawPath(painter_path);
 }
+
+}  // namespace map_panel
+}  // namespace silverstar

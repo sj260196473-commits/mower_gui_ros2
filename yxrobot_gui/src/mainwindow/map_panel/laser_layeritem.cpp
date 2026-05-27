@@ -1,6 +1,9 @@
 #include "mainwindow/map_panel/laser_layeritem.h"
 #include <iostream>
 
+namespace silverstar {
+namespace map_panel {
+
 LaserItem::LaserItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent)
     :MapLayerBase(id,name,"scan",parent)
 {
@@ -157,3 +160,6 @@ QColor LaserItem::Id2Color(int id) {
         return QColor(Qt::white); // 必须有一个默认颜色兜底
     }
 }
+
+}  // namespace map_panel
+}  // namespace silverstar

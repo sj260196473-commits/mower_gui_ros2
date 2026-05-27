@@ -1,5 +1,8 @@
 #include "robotpose_layerItem.h"
 
+namespace silverstar {
+namespace map_panel {
+
 RobotPoseItem::RobotPoseItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent)
     :MapLayerBase(id,name,"localization",parent)
 {
@@ -77,3 +80,6 @@ void RobotPoseItem::updatePose(RobotPose pose)
     setPos(robotScenePose.x, robotScenePose.y);//设置场景坐标系下坐标
     update();
 }
+
+}  // namespace map_panel
+}  // namespace silverstar

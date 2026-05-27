@@ -5,6 +5,9 @@
 #include "channel/virtual_channel.h"
 #include "mainwindow/map_panel/map_layer_registry.h"
 
+namespace silverstar {
+namespace map_panel {
+
 class CostMapItem;
 class GridLayerItem;
 class LaserItem;
@@ -35,5 +38,8 @@ private:
     LaserItem* laserScanItem_{nullptr};
     PathLayerItem* globalPathItem_{nullptr};
 };
+
+}  // namespace map_panel
+}  // namespace silverstar
 
 #endif // MAP_LAYER_RUNTIME_H

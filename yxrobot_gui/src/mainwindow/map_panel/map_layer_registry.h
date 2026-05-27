@@ -5,6 +5,9 @@
 #include <QString>
 #include "mainwindow/map_panel/map_layeritem_virtual.h"
 
+namespace silverstar {
+namespace map_panel {
+
 struct MapLayerEntry
 {
     QString id;
@@ -33,5 +36,8 @@ public:
 private:
     QVector<MapLayerEntry> layers_;
 };
+
+}  // namespace map_panel
+}  // namespace silverstar
 
 #endif // MAP_LAYER_REGISTRY_H

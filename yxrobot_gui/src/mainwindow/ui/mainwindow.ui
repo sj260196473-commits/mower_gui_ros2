@@ -45,7 +45,7 @@
             <item>
              <layout class="QVBoxLayout" name="verticalLayout_2">
               <item>
-               <widget class="MapGraphicsView" name="graphicsView"/>
+               <widget class="silverstar::map_panel::MapGraphicsView" name="graphicsView"/>
               </item>
              </layout>
             </item>
@@ -287,7 +287,7 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>MapGraphicsView</class>
+   <class>silverstar::map_panel::MapGraphicsView</class>
    <extends>QGraphicsView</extends>
    <header>mainwindow/map_panel/map_graphicsview.h</header>
   </customwidget>

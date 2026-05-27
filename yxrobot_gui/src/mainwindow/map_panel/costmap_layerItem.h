@@ -5,6 +5,9 @@
 #include "common/common.h"
 #include "mainwindow/map_panel/map_layeritem_virtual.h"
 
+namespace silverstar {
+namespace map_panel {
+
 inline QRgb costMapRgbaForCost(int cost)
 {
     if (cost >= 100) {
@@ -56,5 +59,8 @@ private:
     QImage m_map_image;
 
 };
+
+}  // namespace map_panel
+}  // namespace silverstar
 
 #endif // COSTMAP_LAYERITEM_H

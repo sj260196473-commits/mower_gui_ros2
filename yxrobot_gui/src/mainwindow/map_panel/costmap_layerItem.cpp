@@ -1,5 +1,8 @@
 #include "mainwindow/map_panel/costmap_layerItem.h"
 
+namespace silverstar {
+namespace map_panel {
+
 CostMapItem::CostMapItem(const QString& id,
                         const QString& name,
                         const int& z,
@@ -35,3 +38,6 @@ void CostMapItem::updateMap(const OccupancyMap& map)
     }
     update();
 }
+
+}  // namespace map_panel
+}  // namespace silverstar
