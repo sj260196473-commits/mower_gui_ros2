@@ -1,7 +1,7 @@
 #ifndef MAP_GRAPHICSVIEW_H
 #define MAP_GRAPHICSVIEW_H
 #include <QGraphicsView>
-#include "mainwindow/map_panel/map_layer_runtime.h"
+#include "mainwindow/map_panel/core/map_layer_runtime.h"
 #include "channel/virtual_channel.h"
 #include "common/map_coordinate_transformer.h"
 #include <QEvent>

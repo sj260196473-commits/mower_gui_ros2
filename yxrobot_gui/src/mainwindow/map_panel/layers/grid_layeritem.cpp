@@ -1,4 +1,4 @@
-#include "mainwindow/map_panel/grid_layeritem.h"
+#include "mainwindow/map_panel/layers/grid_layeritem.h"
 
 #include <QStyleOptionGraphicsItem>
 #include <algorithm>

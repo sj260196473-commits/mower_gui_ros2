@@ -289,7 +289,7 @@
   <customwidget>
    <class>silverstar::map_panel::MapGraphicsView</class>
    <extends>QGraphicsView</extends>
-   <header>mainwindow/map_panel/map_graphicsview.h</header>
+   <header>mainwindow/map_panel/view/map_graphicsview.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

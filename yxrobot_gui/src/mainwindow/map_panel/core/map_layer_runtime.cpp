@@ -1,13 +1,13 @@
-#include "mainwindow/map_panel/map_layer_runtime.h"
+#include "mainwindow/map_panel/core/map_layer_runtime.h"
 
 #include <QObject>
-#include "mainwindow/map_panel/costmap_layerItem.h"
-#include "mainwindow/map_panel/grid_layeritem.h"
-#include "mainwindow/map_panel/laser_layeritem.h"
-#include "mainwindow/map_panel/mapdisplay_factory.h"
-#include "mainwindow/map_panel/occmap_layerItem.h"
-#include "mainwindow/map_panel/path_layerItem.h"
-#include "mainwindow/map_panel/robotpose_layerItem.h"
+#include "mainwindow/map_panel/core/mapdisplay_factory.h"
+#include "mainwindow/map_panel/layers/costmap_layerItem.h"
+#include "mainwindow/map_panel/layers/grid_layeritem.h"
+#include "mainwindow/map_panel/layers/laser_layeritem.h"
+#include "mainwindow/map_panel/layers/occmap_layerItem.h"
+#include "mainwindow/map_panel/layers/path_layerItem.h"
+#include "mainwindow/map_panel/layers/robotpose_layerItem.h"
 
 namespace silverstar {
 namespace map_panel {

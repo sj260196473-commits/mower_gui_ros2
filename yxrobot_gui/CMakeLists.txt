@@ -41,34 +41,34 @@ set(PRO_INCLUDE_DIR
   src/common/map_coordinate_transformer.h
   src/common/point.h
   src/mainwindow/mainwindow.h
-  src/mainwindow/map_panel/costmap_layerItem.h
-  src/mainwindow/map_panel/grid_layeritem.h
-  src/mainwindow/map_panel/laser_layeritem.h
-  src/mainwindow/map_panel/mapdisplay_factory.h
-  src/mainwindow/map_panel/map_graphicsview.h
-  src/mainwindow/map_panel/map_layer_registry.h
-  src/mainwindow/map_panel/map_layer_runtime.h
-  src/mainwindow/map_panel/map_layeritem_virtual.h
-  src/mainwindow/map_panel/occmap_layerItem.h
-  src/mainwindow/map_panel/robotpose_layerItem.h
-  src/mainwindow/map_panel/path_layerItem.h
+  src/mainwindow/map_panel/core/mapdisplay_factory.h
+  src/mainwindow/map_panel/core/map_layer_registry.h
+  src/mainwindow/map_panel/core/map_layer_runtime.h
+  src/mainwindow/map_panel/core/map_layeritem_virtual.h
+  src/mainwindow/map_panel/layers/costmap_layerItem.h
+  src/mainwindow/map_panel/layers/grid_layeritem.h
+  src/mainwindow/map_panel/layers/laser_layeritem.h
+  src/mainwindow/map_panel/layers/occmap_layerItem.h
+  src/mainwindow/map_panel/layers/robotpose_layerItem.h
+  src/mainwindow/map_panel/layers/path_layerItem.h
+  src/mainwindow/map_panel/view/map_graphicsview.h
 )
 
 set(PRO_SOURCES_DIR
   src/app/main.cpp
   src/channel/channel_manager.cpp
   src/mainwindow/mainwindow.cpp
-  src/mainwindow/map_panel/costmap_layerItem.cpp
-  src/mainwindow/map_panel/grid_layeritem.cpp
-  src/mainwindow/map_panel/laser_layeritem.cpp
-  src/mainwindow/map_panel/mapdisplay_factory.cpp
-  src/mainwindow/map_panel/map_graphicsview.cpp
-  src/mainwindow/map_panel/map_layer_registry.cpp
-  src/mainwindow/map_panel/map_layer_runtime.cpp
-  src/mainwindow/map_panel/map_layerItem_virtual.cpp
-  src/mainwindow/map_panel/occmap_layerItem.cpp
-  src/mainwindow/map_panel/robotpose_layerItem.cpp
-  src/mainwindow/map_panel/path_layerItem.cpp
+  src/mainwindow/map_panel/core/mapdisplay_factory.cpp
+  src/mainwindow/map_panel/core/map_layer_registry.cpp
+  src/mainwindow/map_panel/core/map_layer_runtime.cpp
+  src/mainwindow/map_panel/core/map_layerItem_virtual.cpp
+  src/mainwindow/map_panel/layers/costmap_layerItem.cpp
+  src/mainwindow/map_panel/layers/grid_layeritem.cpp
+  src/mainwindow/map_panel/layers/laser_layeritem.cpp
+  src/mainwindow/map_panel/layers/occmap_layerItem.cpp
+  src/mainwindow/map_panel/layers/robotpose_layerItem.cpp
+  src/mainwindow/map_panel/layers/path_layerItem.cpp
+  src/mainwindow/map_panel/view/map_graphicsview.cpp
 )
 
 qt5_wrap_ui(QT_UI_HPP ${UI_DIR})
@@ -90,7 +90,6 @@ target_link_libraries(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/mainwindow/map_panel>
   $<INSTALL_INTERFACE:include>
   ${CMAKE_CURRENT_BINARY_DIR}
 )

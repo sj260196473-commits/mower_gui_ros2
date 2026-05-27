@@ -4,7 +4,7 @@
 #include <QGraphicsItem>
 #include <QPainter>
 #include <QRectF>
-#include "map_layeritem_virtual.h"
+#include "mainwindow/map_panel/core/map_layeritem_virtual.h"
 
 namespace silverstar {
 namespace map_panel {

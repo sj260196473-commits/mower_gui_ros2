@@ -1,5 +1,5 @@
-#include "mainwindow/map_panel/map_graphicsview.h"
-#include "mainwindow/map_panel/grid_layeritem.h"
+#include "mainwindow/map_panel/view/map_graphicsview.h"
+#include "mainwindow/map_panel/layers/grid_layeritem.h"
 #include <QAction>
 #include <QMenu>
 #include <QPainter>

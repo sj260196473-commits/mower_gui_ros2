@@ -3,7 +3,7 @@
 
 #include <QGraphicsScene>
 #include "channel/virtual_channel.h"
-#include "mainwindow/map_panel/map_layer_registry.h"
+#include "mainwindow/map_panel/core/map_layer_registry.h"
 
 namespace silverstar {
 namespace map_panel {
