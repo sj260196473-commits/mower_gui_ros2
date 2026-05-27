@@ -12,8 +12,12 @@
 #include <QDebug>
 #include <memory>
 
+class QResizeEvent;
+
 namespace silverstar {
 namespace map_panel {
+
+class MapOverlayWidget;
 
 class MapGraphicsView: public QGraphicsView
 {
@@ -33,6 +37,8 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
     void leaveEvent(QEvent *event) override;
     void contextMenuEvent(QContextMenuEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
+    void scrollContentsBy(int dx, int dy) override;
 
 signals:
     void mousePositionChanged(const QPointF& scene_pos, const QPointF& world_pos, bool has_world);
@@ -45,6 +51,7 @@ private:
     void emitMousePosition(const QPoint& view_pos);
     void updateGridCellLengthStatus();
     double gridCellSceneLength() const;
+    void updateOverlayGeometry();
 
 private slots:
     void updateMap(const OccupancyMap& map);
@@ -52,6 +59,7 @@ private slots:
 private:
     QGraphicsScene* m_qGraphicScene;
     std::unique_ptr<MapLayerRuntime> layer_runtime_;
+    MapOverlayWidget* overlay_widget_{nullptr};
     MapCoordinateTransformer coordinate_transformer_;
     QRectF current_map_scene_rect_;
 

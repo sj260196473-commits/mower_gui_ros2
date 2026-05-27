@@ -1,10 +1,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
 #include <QLabel>
+#include <QMainWindow>
 #include <QPointF>
 #include <QPushButton>
+#include <memory>
 #include "channel/channel_manager.h"
 #include "common/common.h"
 

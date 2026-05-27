@@ -1,5 +1,6 @@
 #include "mainwindow/map_panel/view/map_graphicsview.h"
 #include "mainwindow/map_panel/layers/grid_layeritem.h"
+#include "mainwindow/map_panel/view/map_overlay_widget.h"
 #include <QAction>
 #include <QMenu>
 #include <QPainter>
@@ -31,6 +32,9 @@ MapGraphicsView::MapGraphicsView(QWidget* parent) :
     layer_runtime_ = std::make_unique<MapLayerRuntime>();
     layer_runtime_->initializeDefaultLayers(m_qGraphicScene);
 
+    overlay_widget_ = new MapOverlayWidget(viewport());
+    updateOverlayGeometry();
+
     this->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
     this->setRenderHint(QPainter::Antialiasing);
 
@@ -57,6 +61,7 @@ void MapGraphicsView::focusMapView()
 
     focusOnRect(current_map_scene_rect_);
     updateGridCellLengthStatus();
+    updateOverlayGeometry();
 }
 
 void MapGraphicsView::updateMap(const OccupancyMap& map)
@@ -184,6 +189,7 @@ void MapGraphicsView::wheelEvent(QWheelEvent *event)
     verticalScrollBar()->setValue(verticalScrollBar()->value() + viewDelta.y());
 
     updateGridCellLengthStatus();
+    updateOverlayGeometry();
     emitMousePosition(mousePos);
     event->accept();
 }
@@ -198,6 +204,18 @@ void MapGraphicsView::contextMenuEvent(QContextMenuEvent *event)
 {
     showLayerContextMenu(event->globalPos());
     event->accept();
+}
+
+void MapGraphicsView::resizeEvent(QResizeEvent *event)
+{
+    QGraphicsView::resizeEvent(event);
+    updateOverlayGeometry();
+}
+
+void MapGraphicsView::scrollContentsBy(int dx, int dy)
+{
+    QGraphicsView::scrollContentsBy(dx, dy);
+    updateOverlayGeometry();
 }
 
 void MapGraphicsView::showLayerContextMenu(const QPoint& global_pos)
@@ -273,6 +291,22 @@ double MapGraphicsView::gridCellSceneLength() const
     }
 
     return kGridCellPixelLength / pixelsPerSceneUnit;
+}
+
+void MapGraphicsView::updateOverlayGeometry()
+{
+    if (!overlay_widget_) {
+        return;
+    }
+
+    constexpr int kOverlayMargin = 12;
+    const int width = std::max(0, viewport()->width() - kOverlayMargin * 2);
+    const int height = overlay_widget_->height();
+    const int x = kOverlayMargin;
+    const int y = std::max(kOverlayMargin, viewport()->height() - height - kOverlayMargin);
+
+    overlay_widget_->setGeometry(x, y, width, height);
+    overlay_widget_->raise();
 }
 
 }  // namespace map_panel
