@@ -69,6 +69,7 @@ void LaserItem::UpdateLaserData(const LaserScan& scan) {
     prepareGeometryChange();
     computeBoundRect(laser_data_scene_);
     update();
+    // std::cout<<"update laserScan!"<<scan.data.size()<<std::endl;
 }
 
 void LaserItem::updateMap(const OccupancyMap& map)

@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.8)
 project(yxrobot_gui)
 
-# 选择通信通道：none 或 ros2 暂时写死
+# 选择通信通道：none / ros1 / ros2 暂时写死
 # set(CHANNEL_OPTION "none" CACHE STRING "Communication channel to build: none or ros2")
 # set_property(CACHE CHANNEL_OPTION PROPERTY STRINGS none ros2)
-set(CHANNEL_OPTION "ros2")
+set(CHANNEL_OPTION "ros1")
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -14,6 +14,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Eigen3 REQUIRED)
+find_package(Threads REQUIRED)
+
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -23,8 +25,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/src/mainwindow/ui)
 
 
-find_package(Qt5 REQUIRED COMPONENTS Core Widgets Multimedia MultimediaWidgets)
-find_package(Qt5 REQUIRED COMPONENTS Core)
+find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
+find_package(Eigen3 REQUIRED)
 
 set(UI_DIR
   src/mainwindow/ui/mainwindow.ui
@@ -88,22 +90,26 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
   Qt5::Core
   Qt5::Widgets
+  Threads::Threads
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
   $<INSTALL_INTERFACE:include>
   ${CMAKE_CURRENT_BINARY_DIR}
+  ${EIGEN3_INCLUDE_DIRS}
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
   YX_CHANNEL_OPTION="${CHANNEL_OPTION}"
 )
 
-if(NOT CHANNEL_OPTION STREQUAL "none" AND NOT CHANNEL_OPTION STREQUAL "ros2")
-  message(FATAL_ERROR "Unsupported CHANNEL_OPTION='${CHANNEL_OPTION}'. Expected 'none' or 'ros2'.")
+if(NOT CHANNEL_OPTION STREQUAL "none" AND NOT CHANNEL_OPTION STREQUAL "ros1" AND NOT CHANNEL_OPTION STREQUAL "ros2")
+  message(FATAL_ERROR "Unsupported CHANNEL_OPTION='${CHANNEL_OPTION}'. Expected 'none' ,'ros1' or 'ros2'.")
 endif()
 
 if(CHANNEL_OPTION STREQUAL "ros2")
   add_subdirectory(src/channel/ros2)
+elseif(CHANNEL_OPTION STREQUAL "ros1")
+  add_subdirectory(src/channel/ros1)
 endif()
