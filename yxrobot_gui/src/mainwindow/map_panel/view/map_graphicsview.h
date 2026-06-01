@@ -18,6 +18,8 @@ namespace silverstar {
 namespace map_panel {
 
 class MapOverlayWidget;
+enum class EditableZoneKind;
+enum class PncTaskType;
 
 class MapGraphicsView: public QGraphicsView
 {
@@ -47,6 +49,21 @@ signals:
 
 private:
     void showLayerContextMenu(const QPoint& global_pos);
+    void setupZoneEditorOverlay();
+    void setupPncTaskOverlay();
+    void handleZoneOverlayButtonClicked(const QString& id);
+    void handlePncTaskButtonClicked(const QString& id);
+    bool handleZoneEditorMousePress(QMouseEvent* event);
+    bool handlePncTaskMousePress(QMouseEvent* event);
+    void startP2PGoalPicking();
+    void sendP2PTask(const QPointF& worldPoint);
+    void sendSelectedZoneTask(PncTaskType type);
+    void startDrawingZone(EditableZoneKind kind);
+    void finishDrawingZone();
+    void cancelDrawingZone();
+    void deleteSelectedZone();
+    void clearEditableZones();
+    QPointF viewToWorld(const QPoint& view_pos, bool* ok = nullptr) const;
     void focusOnRect(const QRectF& targetRect);
     void emitMousePosition(const QPoint& view_pos);
     void updateGridCellLengthStatus();
@@ -60,12 +77,15 @@ private:
     QGraphicsScene* m_qGraphicScene;
     std::unique_ptr<MapLayerRuntime> layer_runtime_;
     MapOverlayWidget* overlay_widget_{nullptr};
+    MapOverlayWidget* pnc_task_overlay_widget_{nullptr};
+    VirtualChannel* channel_{nullptr};
     MapCoordinateTransformer coordinate_transformer_;
     QRectF current_map_scene_rect_;
 
 
     QPoint m_lastMousePos;  // 记录上一次鼠标的位置
     bool m_isDragging = false; // 是否正在拖拽的标志位
+    bool picking_p2p_goal_{false};
     bool has_initial_map_focus_{false};
     double current_grid_cell_length_m_{0.0};
 };

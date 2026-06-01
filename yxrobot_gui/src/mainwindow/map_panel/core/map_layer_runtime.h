@@ -9,6 +9,7 @@ namespace silverstar {
 namespace map_panel {
 
 class CostMapItem;
+class EditableZoneLayerItem;
 class GridLayerItem;
 class LaserItem;
 class OccMapItem;
@@ -25,6 +26,7 @@ public:
     const MapLayerRegistry& registry() const;
 
     GridLayerItem* gridLayer() const;
+    EditableZoneLayerItem* editableZoneLayer() const;
 
 private:
     void addLayerToScene(QGraphicsScene* scene, MapLayerBase* layer);
@@ -37,6 +39,7 @@ private:
     RobotPoseItem* robotPoseItem_{nullptr};
     LaserItem* laserScanItem_{nullptr};
     PathLayerItem* globalPathItem_{nullptr};
+    EditableZoneLayerItem* editableZoneItem_{nullptr};
 };
 
 }  // namespace map_panel

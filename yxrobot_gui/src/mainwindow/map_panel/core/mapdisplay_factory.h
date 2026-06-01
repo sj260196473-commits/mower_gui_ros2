@@ -15,7 +15,8 @@ enum class MapDisplayType
     Grid,
     RobotPose,
     LaserScan,
-    GlobalPath
+    GlobalPath,
+    EditableZones
 };
 
 class MapDisplayFactory : public QObject

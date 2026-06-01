@@ -1,4 +1,7 @@
 #include "mainwindow/map_panel/view/map_graphicsview.h"
+#include "mainwindow/map_panel/core/editable_zone_model.h"
+#include "mainwindow/map_panel/core/pnc_task_model.h"
+#include "mainwindow/map_panel/layers/editable_zone_layeritem.h"
 #include "mainwindow/map_panel/layers/grid_layeritem.h"
 #include "mainwindow/map_panel/view/map_overlay_widget.h"
 #include <QAction>
@@ -32,7 +35,11 @@ MapGraphicsView::MapGraphicsView(QWidget* parent) :
     layer_runtime_ = std::make_unique<MapLayerRuntime>();
     layer_runtime_->initializeDefaultLayers(m_qGraphicScene);
 
+    // 在图层管理器上的按键选择层
+    pnc_task_overlay_widget_ = new MapOverlayWidget(viewport());
+    setupPncTaskOverlay();
     overlay_widget_ = new MapOverlayWidget(viewport());
+    setupZoneEditorOverlay();
     updateOverlayGeometry();
 
     this->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
@@ -47,6 +54,7 @@ void MapGraphicsView::setCommChannel(VirtualChannel* channel)
         return;
     }
 
+    channel_ = channel;
     layer_runtime_->bindChannel(channel);
 
     connect(channel, &VirtualChannel::emitUpdateMap,
@@ -81,6 +89,10 @@ void MapGraphicsView::updateMap(const OccupancyMap& map)
     if (layer_runtime_->gridLayer()) {
         layer_runtime_->gridLayer()->setSceneRect(interactionSceneRect);
     }
+    if (layer_runtime_->editableZoneLayer()) {
+        layer_runtime_->editableZoneLayer()->setSceneRect(interactionSceneRect);
+        layer_runtime_->editableZoneLayer()->updateMap(map);
+    }
 
     if (!has_initial_map_focus_) {
         focusMapView();
@@ -111,6 +123,13 @@ void MapGraphicsView::focusOnRect(const QRectF& targetRect)
 void MapGraphicsView::mousePressEvent(QMouseEvent *event)
 {
     emitMousePosition(event->pos());
+
+    if (handleZoneEditorMousePress(event)) {
+        return;
+    }
+    if (handlePncTaskMousePress(event)) {
+        return;
+    }
 
     if (event->button() == Qt::LeftButton || event->button() == Qt::MiddleButton) {
         m_lastMousePos = event->pos();
@@ -252,6 +271,246 @@ void MapGraphicsView::showLayerContextMenu(const QPoint& global_pos)
     menu.exec(global_pos);
 }
 
+void MapGraphicsView::setupZoneEditorOverlay()
+{
+    if (!overlay_widget_) {
+        return;
+    }
+
+    overlay_widget_->addButton("zone.draw.no_entry", "禁区", "绘制禁区");
+    overlay_widget_->addButton("zone.draw.virtual_wall", "虚拟墙", "绘制虚拟墙");
+    overlay_widget_->addButton("zone.draw.obstacle", "障碍", "绘制障碍物");
+    overlay_widget_->addButton("zone.draw.furniture", "家具", "绘制家具区域");
+    overlay_widget_->addButton("zone.finish", "完成", "完成当前多边形");
+    overlay_widget_->addButton("zone.cancel", "取消", "取消当前绘制");
+    overlay_widget_->addButton("zone.delete", "删除", "删除选中的区域");
+    overlay_widget_->addButton("zone.clear", "清空", "清空所有编辑区域");
+    overlay_widget_->setInfoText("Zone editor ready");
+
+    connect(overlay_widget_, &MapOverlayWidget::buttonClicked,
+            this, &MapGraphicsView::handleZoneOverlayButtonClicked);
+}
+
+void MapGraphicsView::setupPncTaskOverlay()
+{
+    if (!pnc_task_overlay_widget_) {
+        return;
+    }
+
+    pnc_task_overlay_widget_->addButton("pnc.p2p", "点到点", "点击后在地图上选择目标点");
+    pnc_task_overlay_widget_->addButton("pnc.coverage", "覆盖", "对当前选中区域发送覆盖任务");
+    pnc_task_overlay_widget_->addButton("pnc.along_wall", "沿墙", "对当前选中区域发送沿墙任务");
+    pnc_task_overlay_widget_->setInfoText("PNC task ready");
+
+    connect(pnc_task_overlay_widget_, &MapOverlayWidget::buttonClicked,
+            this, &MapGraphicsView::handlePncTaskButtonClicked);
+}
+
+void MapGraphicsView::handleZoneOverlayButtonClicked(const QString& id)
+{
+    if (id == QStringLiteral("zone.draw.no_entry")) {
+        startDrawingZone(EditableZoneKind::NoEntry);
+    } else if (id == QStringLiteral("zone.draw.virtual_wall")) {
+        startDrawingZone(EditableZoneKind::VirtualWall);
+    } else if (id == QStringLiteral("zone.draw.obstacle")) {
+        startDrawingZone(EditableZoneKind::Obstacle);
+    } else if (id == QStringLiteral("zone.draw.furniture")) {
+        startDrawingZone(EditableZoneKind::Furniture);
+    } else if (id == QStringLiteral("zone.finish")) {
+        finishDrawingZone();
+    } else if (id == QStringLiteral("zone.cancel")) {
+        cancelDrawingZone();
+    } else if (id == QStringLiteral("zone.delete")) {
+        deleteSelectedZone();
+    } else if (id == QStringLiteral("zone.clear")) {
+        clearEditableZones();
+    }
+}
+
+void MapGraphicsView::handlePncTaskButtonClicked(const QString& id)
+{
+    if (id == QStringLiteral("pnc.p2p")) {
+        startP2PGoalPicking();
+    } else if (id == QStringLiteral("pnc.coverage")) {
+        sendSelectedZoneTask(PncTaskType::Coverage);
+    } else if (id == QStringLiteral("pnc.along_wall")) {
+        sendSelectedZoneTask(PncTaskType::AlongWall);
+    }
+}
+
+bool MapGraphicsView::handleZoneEditorMousePress(QMouseEvent* event)
+{
+    auto* zoneLayer = layer_runtime_->editableZoneLayer();
+    if (!zoneLayer || !zoneLayer->isVisible()) {
+        return false;
+    }
+
+    bool hasWorld = false;
+    const QPointF worldPoint = viewToWorld(event->pos(), &hasWorld);
+    if (!hasWorld) {
+        return false;
+    }
+
+    if (event->button() == Qt::LeftButton && zoneLayer->isDrawing()) {
+        zoneLayer->addWorldPoint(worldPoint);
+        event->accept();
+        return true;
+    }
+
+    if (event->button() == Qt::LeftButton && (event->modifiers() & Qt::ControlModifier)) {
+        zoneLayer->selectAtWorldPoint(worldPoint);
+        event->accept();
+        return true;
+    }
+
+    return false;
+}
+
+bool MapGraphicsView::handlePncTaskMousePress(QMouseEvent* event)
+{
+    if (!picking_p2p_goal_) {
+        return false;
+    }
+
+    if (event->button() != Qt::LeftButton) {
+        return false;
+    }
+
+    bool hasWorld = false;
+    const QPointF worldPoint = viewToWorld(event->pos(), &hasWorld);
+    if (!hasWorld) {
+        return false;
+    }
+
+    sendP2PTask(worldPoint);
+    picking_p2p_goal_ = false;
+    setCursor(Qt::ArrowCursor);
+    event->accept();
+    return true;
+}
+
+void MapGraphicsView::startP2PGoalPicking()
+{
+    picking_p2p_goal_ = true;
+    if (pnc_task_overlay_widget_) {
+        pnc_task_overlay_widget_->setInfoText(QStringLiteral("Click map goal"));
+    }
+    setCursor(Qt::CrossCursor);
+}
+
+void MapGraphicsView::sendP2PTask(const QPointF& worldPoint)
+{
+    if (!channel_) {
+        return;
+    }
+
+    channel_->SendPncTask(serializeP2PTaskToJson(worldPoint));
+    if (pnc_task_overlay_widget_) {
+        pnc_task_overlay_widget_->setInfoText(
+            QStringLiteral("P2P sent: %1, %2").arg(worldPoint.x(), 0, 'f', 2).arg(worldPoint.y(), 0, 'f', 2));
+    }
+}
+
+void MapGraphicsView::sendSelectedZoneTask(PncTaskType type)
+{
+    auto* zoneLayer = layer_runtime_->editableZoneLayer();
+    if (!channel_ || !zoneLayer) {
+        return;
+    }
+
+    EditableZone zone;
+    if (!zoneLayer->selectedZone(&zone)) {
+        if (pnc_task_overlay_widget_) {
+            pnc_task_overlay_widget_->setInfoText(QStringLiteral("Ctrl+click a zone first"));
+        }
+        return;
+    }
+
+    channel_->SendPncTask(serializeZoneTaskToJson(type, zone));
+    if (pnc_task_overlay_widget_) {
+        pnc_task_overlay_widget_->setInfoText(QStringLiteral("%1 sent").arg(pncTaskTypeName(type)));
+    }
+}
+
+void MapGraphicsView::startDrawingZone(EditableZoneKind kind)
+{
+    auto* zoneLayer = layer_runtime_->editableZoneLayer();
+    if (!zoneLayer) {
+        return;
+    }
+    zoneLayer->setVisible(true);
+    zoneLayer->beginDrawing(kind);
+    if (overlay_widget_) {
+        overlay_widget_->setInfoText(QStringLiteral("Drawing %1").arg(zoneKindDisplayName(kind)));
+    }
+    setCursor(Qt::CrossCursor);
+}
+
+void MapGraphicsView::finishDrawingZone()
+{
+    auto* zoneLayer = layer_runtime_->editableZoneLayer();
+    if (!zoneLayer) {
+        return;
+    }
+    if (zoneLayer->finishDrawing()) {
+        if (overlay_widget_) {
+            overlay_widget_->setInfoText(QStringLiteral("Zone committed"));
+        }
+        setCursor(Qt::ArrowCursor);
+    }
+}
+
+void MapGraphicsView::cancelDrawingZone()
+{
+    auto* zoneLayer = layer_runtime_->editableZoneLayer();
+    if (!zoneLayer) {
+        return;
+    }
+    zoneLayer->cancelDrawing();
+    if (overlay_widget_) {
+        overlay_widget_->setInfoText(QStringLiteral("Drawing cancelled"));
+    }
+    setCursor(Qt::ArrowCursor);
+}
+
+void MapGraphicsView::deleteSelectedZone()
+{
+    auto* zoneLayer = layer_runtime_->editableZoneLayer();
+    if (zoneLayer) {
+        if (zoneLayer->removeSelectedZone() && overlay_widget_) {
+            overlay_widget_->setInfoText(QStringLiteral("Zone deleted"));
+        }
+    }
+}
+
+void MapGraphicsView::clearEditableZones()
+{
+    auto* zoneLayer = layer_runtime_->editableZoneLayer();
+    if (zoneLayer) {
+        zoneLayer->clearZones();
+        if (overlay_widget_) {
+            overlay_widget_->setInfoText(QStringLiteral("Zones cleared"));
+        }
+    }
+}
+
+QPointF MapGraphicsView::viewToWorld(const QPoint& view_pos, bool* ok) const
+{
+    if (ok) {
+        *ok = false;
+    }
+    if (!coordinate_transformer_.isValid()) {
+        return QPointF();
+    }
+
+    const QPointF scenePos = mapToScene(view_pos);
+    const Point worldPoint = coordinate_transformer_.sceneToWorld(Point(scenePos.x(), scenePos.y()));
+    if (ok) {
+        *ok = true;
+    }
+    return QPointF(worldPoint.x, worldPoint.y);
+}
+
 void MapGraphicsView::emitMousePosition(const QPoint& view_pos)
 {
     const QPointF scene_pos = mapToScene(view_pos);
@@ -318,6 +577,12 @@ void MapGraphicsView::updateOverlayGeometry()
 
     overlay_widget_->setGeometry(x, y, width, height);
     overlay_widget_->raise();
+
+    if (pnc_task_overlay_widget_) {
+        const int topY = kOverlayMargin;
+        pnc_task_overlay_widget_->setGeometry(x, topY, width, pnc_task_overlay_widget_->height());
+        pnc_task_overlay_widget_->raise();
+    }
 }
 
 }  // namespace map_panel

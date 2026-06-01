@@ -49,6 +49,15 @@ bool rclcomm::Start()
         std::bind(&rclcomm::globalPathCallback,this,std::placeholders::_1),
         sub1_obt);
 
+    planning_zones_pub_ = node_->create_publisher<std_msgs::msg::String>(
+        "yxrobot_gui/planning_zones",
+        rclcpp::QoS(rclcpp::KeepLast(1)).reliable());
+    blocked_areas_pub_ = node_->create_publisher<std_msgs::msg::String>(
+        "yxrobot_gui/blocked_areas",
+        rclcpp::QoS(rclcpp::KeepLast(1)).reliable());
+    pnc_task_pub_ = node_->create_publisher<std_msgs::msg::String>(
+        "yxrobot_gui/pnc_task",
+        rclcpp::QoS(rclcpp::KeepLast(1)).reliable());
 
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(node_->get_clock(), std::chrono::seconds(10));
     transform_listener_ =
@@ -73,6 +82,42 @@ void rclcomm::Process()
 bool rclcomm::Stop()
 {
     rclcpp::shutdown();
+    return true;
+}
+
+bool rclcomm::SendPlanningZones(const QString& zones_json)
+{
+    if (!planning_zones_pub_) {
+        return false;
+    }
+
+    std_msgs::msg::String msg;
+    msg.data = zones_json.toStdString();
+    planning_zones_pub_->publish(msg);
+    return true;
+}
+
+bool rclcomm::SendBlockedAreas(const QString& blocked_areas_json)
+{
+    if (!blocked_areas_pub_) {
+        return false;
+    }
+
+    std_msgs::msg::String msg;
+    msg.data = blocked_areas_json.toStdString();
+    blocked_areas_pub_->publish(msg);
+    return true;
+}
+
+bool rclcomm::SendPncTask(const QString& task_json)
+{
+    if (!pnc_task_pub_) {
+        return false;
+    }
+
+    std_msgs::msg::String msg;
+    msg.data = task_json.toStdString();
+    pnc_task_pub_->publish(msg);
     return true;
 }
 

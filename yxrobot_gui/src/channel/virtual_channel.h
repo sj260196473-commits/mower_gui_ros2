@@ -4,6 +4,7 @@
 #include <thread>
 #include <atomic>
 #include <iostream>
+#include <QString>
 #include "common/common.h"
 
 class VirtualChannel : public QObject
@@ -16,6 +17,18 @@ public:
     virtual bool Start() = 0;
     virtual void Process() = 0;
     virtual bool Stop() = 0;
+    virtual bool SendPlanningZones(const QString& zones_json) {
+        Q_UNUSED(zones_json);
+        return false;
+    }
+    virtual bool SendBlockedAreas(const QString& blocked_areas_json) {
+        Q_UNUSED(blocked_areas_json);
+        return false;
+    }
+    virtual bool SendPncTask(const QString& task_json) {
+        Q_UNUSED(task_json);
+        return false;
+    }
 
 
     bool Init() {

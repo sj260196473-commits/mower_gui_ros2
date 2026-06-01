@@ -1,5 +1,6 @@
 #include "mapdisplay_factory.h"
 #include "mainwindow/map_panel/layers/costmap_layerItem.h"
+#include "mainwindow/map_panel/layers/editable_zone_layeritem.h"
 #include "mainwindow/map_panel/layers/grid_layeritem.h"
 #include "mainwindow/map_panel/layers/laser_layeritem.h"
 #include "mainwindow/map_panel/layers/occmap_layerItem.h"
@@ -26,6 +27,8 @@ MapLayerBase* MapDisplayFactory::createDisplay(MapDisplayType type)
         return new LaserItem("scan.laser", "Laser Scan", 20);
     case MapDisplayType::GlobalPath:
         return new PathLayerItem("plan.globalPath", "Global Path", 25);
+    case MapDisplayType::EditableZones:
+        return new EditableZoneLayerItem("map.editableZones", "Editable Zones", 30);
     }
 
     return nullptr;
@@ -39,7 +42,8 @@ QVector<MapLayerBase*> MapDisplayFactory::createDefaultDisplays()
         createDisplay(MapDisplayType::Grid),
         createDisplay(MapDisplayType::RobotPose),
         createDisplay(MapDisplayType::LaserScan),
-        createDisplay(MapDisplayType::GlobalPath)
+        createDisplay(MapDisplayType::GlobalPath),
+        createDisplay(MapDisplayType::EditableZones)
     };
 }
 

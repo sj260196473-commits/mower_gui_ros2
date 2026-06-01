@@ -57,7 +57,6 @@ MapOverlayWidget::MapOverlayWidget(QWidget* parent)
         "  background-color: #333333;"
         "}");
 
-    addButton("overlay.action", "Action", "Overlay action");
 }
 
 QPushButton* MapOverlayWidget::addButton(const QString& id, const QString& text, const QString& tooltip)

@@ -3,6 +3,7 @@
 #include <QObject>
 #include "mainwindow/map_panel/core/mapdisplay_factory.h"
 #include "mainwindow/map_panel/layers/costmap_layerItem.h"
+#include "mainwindow/map_panel/layers/editable_zone_layeritem.h"
 #include "mainwindow/map_panel/layers/grid_layeritem.h"
 #include "mainwindow/map_panel/layers/laser_layeritem.h"
 #include "mainwindow/map_panel/layers/occmap_layerItem.h"
@@ -58,6 +59,15 @@ void MapLayerRuntime::bindChannel(VirtualChannel* channel)
         QObject::connect(channel, &VirtualChannel::emitUpdateGlobalCostMap,
                          globalCostMapItem_, &CostMapItem::updateMap, Qt::QueuedConnection);
     }
+    if (editableZoneItem_) {
+        QObject::connect(channel, &VirtualChannel::emitUpdateMap,
+                         editableZoneItem_, &EditableZoneLayerItem::updateMap, Qt::QueuedConnection);
+        QObject::connect(editableZoneItem_, &EditableZoneLayerItem::zoneCommitRequested,
+                         editableZoneItem_, [channel](const QString& planningZonesJson, const QString& blockedAreasJson) {
+            channel->SendPlanningZones(planningZonesJson);
+            channel->SendBlockedAreas(blockedAreasJson);
+        });
+    }
 }
 
 MapLayerRegistry& MapLayerRuntime::registry()
@@ -73,6 +83,11 @@ const MapLayerRegistry& MapLayerRuntime::registry() const
 GridLayerItem* MapLayerRuntime::gridLayer() const
 {
     return gridItem_;
+}
+
+EditableZoneLayerItem* MapLayerRuntime::editableZoneLayer() const
+{
+    return editableZoneItem_;
 }
 
 void MapLayerRuntime::addLayerToScene(QGraphicsScene* scene, MapLayerBase* layer)
@@ -93,6 +108,7 @@ void MapLayerRuntime::resolveDefaultLayerPointers()
     robotPoseItem_ = registry_.layerAs<RobotPoseItem>("localization.robot");
     laserScanItem_ = registry_.layerAs<LaserItem>("scan.laser");
     globalPathItem_ = registry_.layerAs<PathLayerItem>("plan.globalPath");
+    editableZoneItem_ = registry_.layerAs<EditableZoneLayerItem>("map.editableZones");
 }
 
 }  // namespace map_panel
