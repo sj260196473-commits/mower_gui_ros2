@@ -10,8 +10,10 @@
 namespace silverstar {
 namespace map_panel {
 
+/// 构造图层工厂；工厂只负责创建对象，不缓存图层实例。
 MapDisplayFactory::MapDisplayFactory() {}
 
+/// 根据枚举创建对应图层，并设置统一的 id、名称和 z 值。
 MapLayerBase* MapDisplayFactory::createDisplay(MapDisplayType type)
 {
     switch (type) {
@@ -34,6 +36,7 @@ MapLayerBase* MapDisplayFactory::createDisplay(MapDisplayType type)
     return nullptr;
 }
 
+/// 返回当前地图面板启动时需要加入 scene 的默认图层列表。
 QVector<MapLayerBase*> MapDisplayFactory::createDefaultDisplays()
 {
     return {

@@ -7,6 +7,7 @@
 namespace silverstar {
 namespace map_panel {
 
+/// 初始化网格图层元信息和 z 值。
 GridLayerItem::GridLayerItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent)
     : MapLayerBase(id, name, "grid", parent)
 {
@@ -14,11 +15,13 @@ GridLayerItem::GridLayerItem(const QString& id,const QString& name,const int& z,
     setAcceptHoverEvents(true);
 }
 
+/// 返回网格覆盖区域。
 QRectF GridLayerItem::boundingRect() const
 {
     return scene_rect_;
 }
 
+/// 根据当前 scene 范围和网格间距绘制横竖线。
 void GridLayerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     Q_UNUSED(widget);
@@ -62,6 +65,7 @@ void GridLayerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *opt
     painter->restore();
 }
 
+/// 更新网格间距，非法长度会使网格不绘制。
 void GridLayerItem::setGridSceneLength(double length)
 {
     if (std::abs(length - grid_scene_length_) < 1e-9) {
@@ -72,6 +76,7 @@ void GridLayerItem::setGridSceneLength(double length)
     update();
 }
 
+/// 更新网格覆盖范围并触发重绘。
 void GridLayerItem::setSceneRect(const QRectF& rect)
 {
     if (scene_rect_ == rect) {

@@ -3,6 +3,7 @@
 namespace silverstar {
 namespace map_panel {
 
+/// 把图层加入 registry，供右键菜单和运行时查找使用。
 void MapLayerRegistry::addLayer(MapLayerBase* layer)
 {
     if (!layer) {
@@ -21,11 +22,13 @@ void MapLayerRegistry::addLayer(MapLayerBase* layer)
     });
 }
 
+/// 返回所有图层条目，保持加入 scene 时的顺序。
 const QVector<MapLayerEntry>& MapLayerRegistry::layers() const
 {
     return layers_;
 }
 
+/// 线性查找指定 id 的图层对象。
 MapLayerBase* MapLayerRegistry::layer(const QString& id) const
 {
     for (const MapLayerEntry& entry : layers_) {
@@ -37,6 +40,7 @@ MapLayerBase* MapLayerRegistry::layer(const QString& id) const
     return nullptr;
 }
 
+/// 修改图层可见性；找不到 id 时直接忽略。
 void MapLayerRegistry::setVisible(const QString& id, bool visible)
 {
     MapLayerBase* item = layer(id);
@@ -47,6 +51,7 @@ void MapLayerRegistry::setVisible(const QString& id, bool visible)
     item->setVisible(visible);
 }
 
+/// 查询图层可见性；找不到 id 时返回 false。
 bool MapLayerRegistry::isVisible(const QString& id) const
 {
     MapLayerBase* item = layer(id);

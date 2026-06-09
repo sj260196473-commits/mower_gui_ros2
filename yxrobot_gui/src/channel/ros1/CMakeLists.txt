@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   sensor_msgs
   geometry_msgs
+  visualization_msgs
   tf
 )
 find_package(Eigen3 REQUIRED)

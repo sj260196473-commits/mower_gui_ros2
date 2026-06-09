@@ -18,17 +18,30 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    /// 构造主窗口，初始化 UI、状态栏和通信通道。
     MainWindow(QWidget *parent = nullptr);
+
+    /// 释放 UI 资源。
     ~MainWindow();
 
 private slots:
+    /// 切换右侧 dock 面板的显示状态。
     void on_hide_right_btn_clicked();
+
+    /// 切换左侧 dock 面板的显示状态。
     void on_hide_left_btn_clicked();
 
 private:
+    /// 创建状态栏控件，并连接地图视图状态信号。
     void setupStatusBar();
+
+    /// 将鼠标 scene/world 坐标显示到状态栏。
     void updateMousePositionStatus(const QPointF& scene_pos, const QPointF& world_pos, bool has_world);
+
+    /// 将当前网格单元世界长度显示到状态栏。
     void updateGridCellLengthStatus(double length_m);
+
+    /// 清空鼠标坐标显示。
     void clearMousePositionStatus();
 
     Ui::MainWindow *ui;

@@ -146,4 +146,24 @@ if(BUILD_TESTING)
     Qt5::Core
   )
   add_test(NAME test_pnc_task_model COMMAND test_pnc_task_model)
+
+  qt5_wrap_cpp(TEST_ROBOTPOSE_MOC_HPP
+    src/mainwindow/map_panel/layers/robotpose_layerItem.h
+    src/mainwindow/map_panel/core/map_layeritem_virtual.h
+  )
+  add_executable(test_robotpose_layeritem
+    tests/test_robotpose_layeritem.cpp
+    src/mainwindow/map_panel/layers/robotpose_layerItem.cpp
+    src/mainwindow/map_panel/core/map_layerItem_virtual.cpp
+    ${TEST_ROBOTPOSE_MOC_HPP}
+  )
+  target_include_directories(test_robotpose_layeritem PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${EIGEN3_INCLUDE_DIRS}
+  )
+  target_link_libraries(test_robotpose_layeritem
+    Qt5::Core
+    Qt5::Widgets
+  )
+  add_test(NAME test_robotpose_layeritem COMMAND test_robotpose_layeritem)
 endif()

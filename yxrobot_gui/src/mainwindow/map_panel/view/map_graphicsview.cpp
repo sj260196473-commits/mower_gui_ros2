@@ -5,8 +5,12 @@
 #include "mainwindow/map_panel/layers/grid_layeritem.h"
 #include "mainwindow/map_panel/view/map_overlay_widget.h"
 #include <QAction>
+#include <QBrush>
+#include <QGraphicsLineItem>
+#include <QGraphicsPolygonItem>
 #include <QMenu>
 #include <QPainter>
+#include <QPen>
 #include <algorithm>
 #include <cmath>
 
@@ -18,8 +22,12 @@ namespace
 constexpr double kGridCellPixelLength = 80.0;
 constexpr double kMinViewScale = 0.01;
 constexpr double kScaleStep = 1.15;
+constexpr qreal kP2PArrowHeadLengthPx = 18.0;
+constexpr qreal kP2PArrowHeadWidthPx = 11.0;
+constexpr qreal kP2PArrowMinSceneLength = 1e-6;
 }
 
+/// 构造地图视图，创建 scene、默认图层和上下两个悬浮工具条。
 MapGraphicsView::MapGraphicsView(QWidget* parent) :
     QGraphicsView(parent)
 {
@@ -48,6 +56,7 @@ MapGraphicsView::MapGraphicsView(QWidget* parent) :
 
 }
 
+/// 绑定通信通道，并订阅地图更新信号。
 void MapGraphicsView::setCommChannel(VirtualChannel* channel)
 {
     if (channel == nullptr) {
@@ -61,6 +70,7 @@ void MapGraphicsView::setCommChannel(VirtualChannel* channel)
             this, &MapGraphicsView::updateMap, Qt::QueuedConnection);
 }
 
+/// 将视图缩放和平移到当前地图矩形。
 void MapGraphicsView::focusMapView()
 {
     if (current_map_scene_rect_.isNull() || current_map_scene_rect_.isEmpty()) {
@@ -72,6 +82,7 @@ void MapGraphicsView::focusMapView()
     updateOverlayGeometry();
 }
 
+/// 更新地图相关状态，包括坐标转换、scene 范围和图层地图缓存。
 void MapGraphicsView::updateMap(const OccupancyMap& map)
 {
     if(map.isNULL()) return;
@@ -102,6 +113,7 @@ void MapGraphicsView::updateMap(const OccupancyMap& map)
     updateGridCellLengthStatus();
 }
 
+/// 对目标矩形增加边距后适配到视图。
 void MapGraphicsView::focusOnRect(const QRectF& targetRect)
 {
     if(targetRect.isNull() || targetRect.isEmpty()) {
@@ -120,6 +132,7 @@ void MapGraphicsView::focusOnRect(const QRectF& targetRect)
 }
 
 // 鼠标按下：记录起始点，开启拖拽状态
+/// 鼠标按下入口，优先交给区域编辑和 P2P 交互处理。
 void MapGraphicsView::mousePressEvent(QMouseEvent *event)
 {
     emitMousePosition(event->pos());
@@ -143,9 +156,20 @@ void MapGraphicsView::mousePressEvent(QMouseEvent *event)
 }
 
 // 鼠标移动：计算差值，移动滚动条
+/// 鼠标移动入口，更新坐标显示、P2P 箭头或地图拖拽。
 void MapGraphicsView::mouseMoveEvent(QMouseEvent *event)
 {
     emitMousePosition(event->pos());
+
+    if (picking_p2p_goal_ && has_p2p_goal_press_) {
+        bool hasWorld = false;
+        const QPointF releaseWorldPoint = viewToWorld(event->pos(), &hasWorld);
+        if (hasWorld) {
+            updateP2PGoalPreview(p2p_goal_press_world_, releaseWorldPoint);
+        }
+        event->accept();
+        return;
+    }
 
     if (m_isDragging) {
         // 计算鼠标移动的像素差值
@@ -163,8 +187,13 @@ void MapGraphicsView::mouseMoveEvent(QMouseEvent *event)
 }
 
 // 鼠标释放：恢复状态
+/// 鼠标释放入口，完成 P2P 任务或结束地图拖拽。
 void MapGraphicsView::mouseReleaseEvent(QMouseEvent *event)
 {
+    if (handlePncTaskMouseRelease(event)) {
+        return;
+    }
+
     if (event->button() == Qt::LeftButton || event->button() == Qt::MiddleButton) {
         m_isDragging = false;
         setCursor(Qt::ArrowCursor); // 恢复正常鼠标图标
@@ -175,6 +204,7 @@ void MapGraphicsView::mouseReleaseEvent(QMouseEvent *event)
 }
 
 // 接管滚轮缩放（比内置的更平滑，且可以限制缩放比例）
+/// 滚轮缩放地图，并保持鼠标所在 scene 点缩放前后位置稳定。
 void MapGraphicsView::wheelEvent(QWheelEvent *event)
 {
     const int wheelDelta = event->angleDelta().y();
@@ -213,30 +243,35 @@ void MapGraphicsView::wheelEvent(QWheelEvent *event)
     event->accept();
 }
 
+/// 鼠标离开视图时通知外部清理坐标状态。
 void MapGraphicsView::leaveEvent(QEvent *event)
 {
     emit mouseLeftScene();
     QGraphicsView::leaveEvent(event);
 }
 
+/// 显示图层显隐右键菜单。
 void MapGraphicsView::contextMenuEvent(QContextMenuEvent *event)
 {
     showLayerContextMenu(event->globalPos());
     event->accept();
 }
 
+/// 尺寸变化后重新布局悬浮工具条。
 void MapGraphicsView::resizeEvent(QResizeEvent *event)
 {
     QGraphicsView::resizeEvent(event);
     updateOverlayGeometry();
 }
 
+/// 滚动条移动后重新布局悬浮工具条。
 void MapGraphicsView::scrollContentsBy(int dx, int dy)
 {
     QGraphicsView::scrollContentsBy(dx, dy);
     updateOverlayGeometry();
 }
 
+/// 根据 registry 中的图层信息生成右键菜单。
 void MapGraphicsView::showLayerContextMenu(const QPoint& global_pos)
 {
     QMenu menu(this);
@@ -271,12 +306,13 @@ void MapGraphicsView::showLayerContextMenu(const QPoint& global_pos)
     menu.exec(global_pos);
 }
 
+/// 创建区域编辑按钮并连接按钮点击信号。
 void MapGraphicsView::setupZoneEditorOverlay()
 {
     if (!overlay_widget_) {
         return;
     }
-
+    overlay_widget_->addButton("zone.draw.clean_area", "清扫区", "绘制清扫区域");
     overlay_widget_->addButton("zone.draw.no_entry", "禁区", "绘制禁区");
     overlay_widget_->addButton("zone.draw.virtual_wall", "虚拟墙", "绘制虚拟墙");
     overlay_widget_->addButton("zone.draw.obstacle", "障碍", "绘制障碍物");
@@ -291,6 +327,7 @@ void MapGraphicsView::setupZoneEditorOverlay()
             this, &MapGraphicsView::handleZoneOverlayButtonClicked);
 }
 
+/// 创建 PNC 任务按钮并连接按钮点击信号。
 void MapGraphicsView::setupPncTaskOverlay()
 {
     if (!pnc_task_overlay_widget_) {
@@ -306,12 +343,15 @@ void MapGraphicsView::setupPncTaskOverlay()
             this, &MapGraphicsView::handlePncTaskButtonClicked);
 }
 
+/// 根据区域编辑按钮 id 调用对应编辑命令。
 void MapGraphicsView::handleZoneOverlayButtonClicked(const QString& id)
 {
     if (id == QStringLiteral("zone.draw.no_entry")) {
         startDrawingZone(EditableZoneKind::NoEntry);
     } else if (id == QStringLiteral("zone.draw.virtual_wall")) {
         startDrawingZone(EditableZoneKind::VirtualWall);
+    } else if (id == QStringLiteral("zone.draw.clean_area")) {
+        startDrawingZone(EditableZoneKind::CleanArea);
     } else if (id == QStringLiteral("zone.draw.obstacle")) {
         startDrawingZone(EditableZoneKind::Obstacle);
     } else if (id == QStringLiteral("zone.draw.furniture")) {
@@ -327,6 +367,7 @@ void MapGraphicsView::handleZoneOverlayButtonClicked(const QString& id)
     }
 }
 
+/// 根据 PNC 按钮 id 调用点到点或区域任务命令。
 void MapGraphicsView::handlePncTaskButtonClicked(const QString& id)
 {
     if (id == QStringLiteral("pnc.p2p")) {
@@ -338,6 +379,7 @@ void MapGraphicsView::handlePncTaskButtonClicked(const QString& id)
     }
 }
 
+/// 在区域编辑模式下处理加点和 Ctrl 选择区域。
 bool MapGraphicsView::handleZoneEditorMousePress(QMouseEvent* event)
 {
     auto* zoneLayer = layer_runtime_->editableZoneLayer();
@@ -366,6 +408,7 @@ bool MapGraphicsView::handleZoneEditorMousePress(QMouseEvent* event)
     return false;
 }
 
+/// 在 P2P 模式下记录鼠标按下世界坐标作为目标点。
 bool MapGraphicsView::handlePncTaskMousePress(QMouseEvent* event)
 {
     if (!picking_p2p_goal_) {
@@ -382,35 +425,159 @@ bool MapGraphicsView::handlePncTaskMousePress(QMouseEvent* event)
         return false;
     }
 
-    sendP2PTask(worldPoint);
+    p2p_goal_press_world_ = worldPoint;
+    has_p2p_goal_press_ = true;
+    updateP2PGoalPreview(p2p_goal_press_world_, worldPoint);
+    if (pnc_task_overlay_widget_) {
+        pnc_task_overlay_widget_->setInfoText(QStringLiteral("Drag direction and release"));
+    }
+    event->accept();
+    return true;
+}
+
+/// 在 P2P 模式下根据释放点计算朝向并发送任务。
+bool MapGraphicsView::handlePncTaskMouseRelease(QMouseEvent* event)
+{
+    if (!picking_p2p_goal_ || !has_p2p_goal_press_) {
+        return false;
+    }
+
+    if (event->button() != Qt::LeftButton) {
+        return false;
+    }
+
+    bool hasWorld = false;
+    const QPointF releaseWorldPoint = viewToWorld(event->pos(), &hasWorld);
+    if (!hasWorld) {
+        return false;
+    }
+
+    const QPointF delta = releaseWorldPoint - p2p_goal_press_world_;
+    if (std::hypot(delta.x(), delta.y()) < 1e-6) {
+        has_p2p_goal_press_ = false;
+        clearP2PGoalPreview();
+        if (pnc_task_overlay_widget_) {
+            pnc_task_overlay_widget_->setInfoText(QStringLiteral("Drag to set direction"));
+        }
+        event->accept();
+        return true;
+    }
+
+    sendP2PTask(p2p_goal_press_world_, releaseWorldPoint);
     picking_p2p_goal_ = false;
+    has_p2p_goal_press_ = false;
+    clearP2PGoalPreview();
     setCursor(Qt::ArrowCursor);
     event->accept();
     return true;
 }
 
+/// 进入 P2P 目标选择模式，并取消未完成的区域绘制。
 void MapGraphicsView::startP2PGoalPicking()
 {
+    if (auto* zoneLayer = layer_runtime_->editableZoneLayer()) {
+        zoneLayer->cancelDrawing();
+    }
     picking_p2p_goal_ = true;
+    has_p2p_goal_press_ = false;
+    clearP2PGoalPreview();
     if (pnc_task_overlay_widget_) {
-        pnc_task_overlay_widget_->setInfoText(QStringLiteral("Click map goal"));
+        pnc_task_overlay_widget_->setInfoText(QStringLiteral("Press goal and drag direction"));
     }
     setCursor(Qt::CrossCursor);
 }
 
-void MapGraphicsView::sendP2PTask(const QPointF& worldPoint)
+/// 发送 P2P 任务并在工具条显示目标位姿。
+void MapGraphicsView::sendP2PTask(const QPointF& pressWorldPoint, const QPointF& releaseWorldPoint)
 {
     if (!channel_) {
         return;
     }
 
-    channel_->SendPncTask(serializeP2PTaskToJson(worldPoint));
+    channel_->SendPncTask(makeP2PTask(pressWorldPoint, releaseWorldPoint));
     if (pnc_task_overlay_widget_) {
+        const double yaw = std::atan2(releaseWorldPoint.y() - pressWorldPoint.y(),
+                                      releaseWorldPoint.x() - pressWorldPoint.x());
         pnc_task_overlay_widget_->setInfoText(
-            QStringLiteral("P2P sent: %1, %2").arg(worldPoint.x(), 0, 'f', 2).arg(worldPoint.y(), 0, 'f', 2));
+            QStringLiteral("P2P sent: %1, %2, %3")
+                .arg(pressWorldPoint.x(), 0, 'f', 2)
+                .arg(pressWorldPoint.y(), 0, 'f', 2)
+                .arg(yaw, 0, 'f', 2));
     }
 }
 
+/// 创建或更新 P2P 拖拽方向箭头。
+void MapGraphicsView::updateP2PGoalPreview(const QPointF& pressWorldPoint, const QPointF& releaseWorldPoint)
+{
+    const QPointF startScene = worldToScenePoint(pressWorldPoint);
+    const QPointF endScene = worldToScenePoint(releaseWorldPoint);
+    const QPointF vector = endScene - startScene;
+    const qreal length = std::hypot(vector.x(), vector.y());
+
+    if (!p2p_goal_arrow_line_) {
+        p2p_goal_arrow_line_ = m_qGraphicScene->addLine(QLineF(startScene, endScene));
+        p2p_goal_arrow_line_->setZValue(1000.0);
+    }
+    if (!p2p_goal_arrow_head_) {
+        p2p_goal_arrow_head_ = m_qGraphicScene->addPolygon(QPolygonF());
+        p2p_goal_arrow_head_->setZValue(1001.0);
+    }
+
+    QPen arrowPen(QColor(20, 180, 255, 230));
+    arrowPen.setCosmetic(true);
+    arrowPen.setWidth(3);
+    arrowPen.setCapStyle(Qt::RoundCap);
+    p2p_goal_arrow_line_->setPen(arrowPen);
+    p2p_goal_arrow_line_->setLine(QLineF(startScene, endScene));
+
+    p2p_goal_arrow_head_->setPen(Qt::NoPen);
+    p2p_goal_arrow_head_->setBrush(QColor(20, 180, 255, 210));
+    if (length <= kP2PArrowMinSceneLength) {
+        p2p_goal_arrow_head_->setPolygon(QPolygonF());
+        return;
+    }
+
+    const qreal pixelsPerSceneUnit = std::max<qreal>(0.001, std::abs(transform().m11()));
+    const qreal headLength = kP2PArrowHeadLengthPx / pixelsPerSceneUnit;
+    const qreal headWidth = kP2PArrowHeadWidthPx / pixelsPerSceneUnit;
+    const QPointF direction(vector.x() / length, vector.y() / length);
+    const QPointF normal(-direction.y(), direction.x());
+    const QPointF base = endScene - direction * headLength;
+
+    QPolygonF arrowHead;
+    arrowHead << endScene
+              << base + normal * (headWidth * 0.5)
+              << base - normal * (headWidth * 0.5);
+    p2p_goal_arrow_head_->setPolygon(arrowHead);
+}
+
+/// 删除 P2P 箭头图元，释放 scene item。
+void MapGraphicsView::clearP2PGoalPreview()
+{
+    if (p2p_goal_arrow_line_) {
+        m_qGraphicScene->removeItem(p2p_goal_arrow_line_);
+        delete p2p_goal_arrow_line_;
+        p2p_goal_arrow_line_ = nullptr;
+    }
+    if (p2p_goal_arrow_head_) {
+        m_qGraphicScene->removeItem(p2p_goal_arrow_head_);
+        delete p2p_goal_arrow_head_;
+        p2p_goal_arrow_head_ = nullptr;
+    }
+}
+
+/// 使用当前地图转换器把世界点转换为 scene 点。
+QPointF MapGraphicsView::worldToScenePoint(const QPointF& worldPoint) const
+{
+    if (!coordinate_transformer_.isValid()) {
+        return worldPoint;
+    }
+
+    const Point scenePoint = coordinate_transformer_.worldToScene(Point(worldPoint.x(), worldPoint.y()));
+    return QPointF(scenePoint.x, scenePoint.y);
+}
+
+/// 使用当前选中区域发送覆盖或沿墙任务。
 void MapGraphicsView::sendSelectedZoneTask(PncTaskType type)
 {
     auto* zoneLayer = layer_runtime_->editableZoneLayer();
@@ -426,18 +593,22 @@ void MapGraphicsView::sendSelectedZoneTask(PncTaskType type)
         return;
     }
 
-    channel_->SendPncTask(serializeZoneTaskToJson(type, zone));
+    channel_->SendPncTask(makeZoneTask(type, zone));
     if (pnc_task_overlay_widget_) {
         pnc_task_overlay_widget_->setInfoText(QStringLiteral("%1 sent").arg(pncTaskTypeName(type)));
     }
 }
 
+/// 开始绘制指定类型区域，并关闭 P2P 选择模式。
 void MapGraphicsView::startDrawingZone(EditableZoneKind kind)
 {
     auto* zoneLayer = layer_runtime_->editableZoneLayer();
     if (!zoneLayer) {
         return;
     }
+    picking_p2p_goal_ = false;
+    has_p2p_goal_press_ = false;
+    clearP2PGoalPreview();
     zoneLayer->setVisible(true);
     zoneLayer->beginDrawing(kind);
     if (overlay_widget_) {
@@ -446,6 +617,7 @@ void MapGraphicsView::startDrawingZone(EditableZoneKind kind)
     setCursor(Qt::CrossCursor);
 }
 
+/// 完成当前区域绘制，成功后恢复普通光标。
 void MapGraphicsView::finishDrawingZone()
 {
     auto* zoneLayer = layer_runtime_->editableZoneLayer();
@@ -460,6 +632,7 @@ void MapGraphicsView::finishDrawingZone()
     }
 }
 
+/// 取消当前区域绘制，恢复普通光标。
 void MapGraphicsView::cancelDrawingZone()
 {
     auto* zoneLayer = layer_runtime_->editableZoneLayer();
@@ -473,6 +646,7 @@ void MapGraphicsView::cancelDrawingZone()
     setCursor(Qt::ArrowCursor);
 }
 
+/// 删除编辑层当前选中的区域。
 void MapGraphicsView::deleteSelectedZone()
 {
     auto* zoneLayer = layer_runtime_->editableZoneLayer();
@@ -483,6 +657,7 @@ void MapGraphicsView::deleteSelectedZone()
     }
 }
 
+/// 清空编辑层所有区域。
 void MapGraphicsView::clearEditableZones()
 {
     auto* zoneLayer = layer_runtime_->editableZoneLayer();
@@ -494,6 +669,7 @@ void MapGraphicsView::clearEditableZones()
     }
 }
 
+/// 将 viewport 坐标转换为世界坐标。
 QPointF MapGraphicsView::viewToWorld(const QPoint& view_pos, bool* ok) const
 {
     if (ok) {
@@ -511,6 +687,7 @@ QPointF MapGraphicsView::viewToWorld(const QPoint& view_pos, bool* ok) const
     return QPointF(worldPoint.x, worldPoint.y);
 }
 
+/// 计算鼠标 scene/world 坐标并发出状态信号。
 void MapGraphicsView::emitMousePosition(const QPoint& view_pos)
 {
     const QPointF scene_pos = mapToScene(view_pos);
@@ -527,6 +704,7 @@ void MapGraphicsView::emitMousePosition(const QPoint& view_pos)
     emit mousePositionChanged(scene_pos, world_pos, has_world);
 }
 
+/// 根据当前缩放计算网格代表的世界长度，并通知图层/状态栏。
 void MapGraphicsView::updateGridCellLengthStatus()
 {
     if (!coordinate_transformer_.isValid()) {
@@ -549,6 +727,7 @@ void MapGraphicsView::updateGridCellLengthStatus()
     emit gridCellLengthChanged(current_grid_cell_length_m_);
 }
 
+/// 计算固定屏幕像素长度对应的 scene 长度。
 double MapGraphicsView::gridCellSceneLength() const
 {
     if (!coordinate_transformer_.isValid()) {
@@ -563,6 +742,7 @@ double MapGraphicsView::gridCellSceneLength() const
     return kGridCellPixelLength / pixelsPerSceneUnit;
 }
 
+/// 把区域编辑工具条放在底部，PNC 工具条放在顶部。
 void MapGraphicsView::updateOverlayGeometry()
 {
     if (!overlay_widget_) {

@@ -3,6 +3,7 @@
 namespace silverstar {
 namespace map_panel {
 
+/// 初始化代价地图图层元信息。
 CostMapItem::CostMapItem(const QString& id,
                         const QString& name,
                         const int& z,
@@ -12,6 +13,7 @@ CostMapItem::CostMapItem(const QString& id,
     setZValue(z);
 }
 
+/// 将缓存图像绘制到 scene，代价地图为空时绘制为空。
 void CostMapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     Q_UNUSED(option);
@@ -19,11 +21,13 @@ void CostMapItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *optio
     painter->drawImage(0,0,m_map_image);
 }
 
+/// 使用图像尺寸作为图层边界。
 QRectF CostMapItem::boundingRect() const
 {
     return QRectF(0,0,m_map_image.width(),m_map_image.height());
 }
 
+/// 将 OccupancyMap 的代价值转换为 ARGB 图像缓存。
 void CostMapItem::updateMap(const OccupancyMap& map)
 {
     prepareGeometryChange();

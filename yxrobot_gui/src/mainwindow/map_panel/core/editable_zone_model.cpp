@@ -1,31 +1,9 @@
 #include "mainwindow/map_panel/core/editable_zone_model.h"
 
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
-
 namespace silverstar {
 namespace map_panel {
 
-QString zoneKindToProtoName(EditableZoneKind kind)
-{
-    switch (kind) {
-    case EditableZoneKind::NoEntry:
-        return QStringLiteral("NO_ENTRY_ZONE");
-    case EditableZoneKind::VirtualWall:
-        return QStringLiteral("VIRTUAL_WALL");
-    case EditableZoneKind::NoMop:
-        return QStringLiteral("NO_MOP_ZONE");
-    case EditableZoneKind::NoSweep:
-        return QStringLiteral("NO_SWEEP_ZONE");
-    case EditableZoneKind::Obstacle:
-    case EditableZoneKind::Furniture:
-        return QStringLiteral("BLOCKED_ZONE");
-    }
-
-    return QStringLiteral("NO_ENTRY_ZONE");
-}
-
+/// 将编辑区域类型转换为用户可读的英文显示名。
 QString zoneKindDisplayName(EditableZoneKind kind)
 {
     switch (kind) {
@@ -41,53 +19,71 @@ QString zoneKindDisplayName(EditableZoneKind kind)
         return QStringLiteral("Obstacle");
     case EditableZoneKind::Furniture:
         return QStringLiteral("Furniture");
+    case EditableZoneKind::CleanArea:
+        return QStringLiteral("Clean Area");
     }
 
     return QStringLiteral("Zone");
 }
 
-bool isBlockedAreaKind(EditableZoneKind kind)
+/// 将 Qt 编辑层枚举转换为 common 通用导航枚举。
+NavigationZoneKind toNavigationZoneKind(EditableZoneKind kind)
 {
-    return kind == EditableZoneKind::Obstacle || kind == EditableZoneKind::Furniture;
-}
-
-QString serializeZonesToJson(const QVector<EditableZone>& zones, const QString& mapId)
-{
-    QJsonObject root;
-    root.insert(QStringLiteral("map_id"), mapId);
-
-    QJsonArray zoneArray;
-    for (const EditableZone& zone : zones) {
-        if (!zone.enabled) {
-            continue;
-        }
-
-        QJsonObject zoneObject;
-        zoneObject.insert(QStringLiteral("id"), zone.id);
-        zoneObject.insert(QStringLiteral("name"), zone.name);
-        zoneObject.insert(QStringLiteral("type"), zoneKindToProtoName(zone.kind));
-        zoneObject.insert(QStringLiteral("action"), QStringLiteral("ADD"));
-
-        QJsonArray pointsArray;
-        for (const QPointF& point : zone.world_points) {
-            QJsonObject pointObject;
-            pointObject.insert(QStringLiteral("x"), point.x());
-            pointObject.insert(QStringLiteral("y"), point.y());
-            pointsArray.append(pointObject);
-        }
-        zoneObject.insert(QStringLiteral("points"), pointsArray);
-        zoneArray.append(zoneObject);
+    switch (kind) {
+    case EditableZoneKind::NoEntry:
+        return NavigationZoneKind::NoEntry;
+    case EditableZoneKind::VirtualWall:
+        return NavigationZoneKind::VirtualWall;
+    case EditableZoneKind::NoMop:
+        return NavigationZoneKind::NoMop;
+    case EditableZoneKind::NoSweep:
+        return NavigationZoneKind::NoSweep;
+    case EditableZoneKind::Obstacle:
+        return NavigationZoneKind::Obstacle;
+    case EditableZoneKind::Furniture:
+        return NavigationZoneKind::Furniture;
+    case EditableZoneKind::CleanArea:
+        return NavigationZoneKind::CleanArea;
     }
 
-    root.insert(QStringLiteral("zones"), zoneArray);
-    return QString::fromUtf8(QJsonDocument(root).toJson(QJsonDocument::Compact));
+    return NavigationZoneKind::NoEntry;
 }
 
+/// 将一个 EditableZone 转为不依赖 Qt 的通用导航区域。
+NavigationZone toNavigationZone(const EditableZone& zone)
+{
+    NavigationZone result;
+    result.id = zone.id.toStdString();
+    result.name = zone.name.toStdString();
+    result.kind = toNavigationZoneKind(zone.kind);
+    result.enabled = zone.enabled;
+    result.points.reserve(zone.world_points.size());
+    for (const QPointF& point : zone.world_points) {
+        result.points.push_back({point.x(), point.y()});
+    }
+    return result;
+}
+
+/// 将区域列表整体转为通用导航集合，并附带地图 id。
+NavigationZoneCollection toNavigationZoneCollection(const QVector<EditableZone>& zones,
+                                                    const QString& mapId)
+{
+    NavigationZoneCollection result;
+    result.map_id = mapId.toStdString();
+    result.zones.reserve(zones.size());
+    for (const EditableZone& zone : zones) {
+        result.zones.push_back(toNavigationZone(zone));
+    }
+    return result;
+}
+
+/// 返回内部区域列表的只读引用，供绘制和查询使用。
 const QVector<EditableZone>& EditableZoneModel::zones() const
 {
     return zones_;
 }
 
+/// 按 id 更新已有区域，未找到时追加到列表末尾。
 void EditableZoneModel::upsertZone(const EditableZone& zone)
 {
     for (EditableZone& existing : zones_) {
@@ -99,6 +95,7 @@ void EditableZoneModel::upsertZone(const EditableZone& zone)
     zones_.push_back(zone);
 }
 
+/// 删除指定 id 的区域，并返回删除是否成功。
 bool EditableZoneModel::removeZone(const QString& id)
 {
     for (int i = 0; i < zones_.size(); ++i) {
@@ -110,31 +107,16 @@ bool EditableZoneModel::removeZone(const QString& id)
     return false;
 }
 
+/// 清空全部区域数据。
 void EditableZoneModel::clear()
 {
     zones_.clear();
 }
 
-QVector<EditableZone> EditableZoneModel::planningZones() const
+/// 获取全部区域的结构化通用导航集合。
+NavigationZoneCollection EditableZoneModel::navigationZoneCollection(const QString& mapId) const
 {
-    QVector<EditableZone> result;
-    for (const EditableZone& zone : zones_) {
-        if (!isBlockedAreaKind(zone.kind)) {
-            result.push_back(zone);
-        }
-    }
-    return result;
-}
-
-QVector<EditableZone> EditableZoneModel::blockedAreas() const
-{
-    QVector<EditableZone> result;
-    for (const EditableZone& zone : zones_) {
-        if (isBlockedAreaKind(zone.kind)) {
-            result.push_back(zone);
-        }
-    }
-    return result;
+    return toNavigationZoneCollection(zones_, mapId);
 }
 
 }  // namespace map_panel

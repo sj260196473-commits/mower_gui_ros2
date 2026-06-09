@@ -6,6 +6,7 @@
 namespace silverstar {
 namespace map_panel {
 
+/// 初始化机器人位姿图层元信息和默认绘制尺寸。
 RobotPoseItem::RobotPoseItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent)
     :MapLayerBase(id,name,"localization",parent)
 {
@@ -18,10 +19,12 @@ RobotPoseItem::RobotPoseItem(const QString& id,const QString& name,const int& z,
     updateRobotPixelSize();
 }
 
+/// 返回机器人图元当前包围盒。
 QRectF RobotPoseItem::boundingRect() const {
     return m_boundingRect;
 }
 
+/// 根据当前位姿朝向绘制机器人轮廓和局部坐标轴。
 void RobotPoseItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                      QWidget *widget) {
     Q_UNUSED(option);
@@ -42,19 +45,20 @@ void RobotPoseItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *opt
     painter->restore();
 }
 
-void RobotPoseItem::setRobotSize(double width_m, double height_m)
+/// 设置机器人圆形 footprint 半径，并按当前地图分辨率更新像素尺寸。
+void RobotPoseItem::setRobotRadius(double radius_m)
 {
-    if (width_m <= 0.0 || height_m <= 0.0) {
+    if (radius_m <= 0.0) {
         return;
     }
 
-    m_robotActualWidth_m = width_m;
-    m_robotActualHeight_m = height_m;
+    m_robotRadius_m = radius_m;
     prepareGeometryChange();
     updateRobotPixelSize();
     update();
 }
 
+/// 更新地图坐标转换器和地图分辨率。
 void RobotPoseItem::updateMap(const OccupancyMap& map)
 {
     coordinate_transformer_.updateMap(map);
@@ -64,6 +68,7 @@ void RobotPoseItem::updateMap(const OccupancyMap& map)
     update();
 }
 
+/// 更新机器人世界位姿，并将位置转换为 scene 坐标。
 void RobotPoseItem::updatePose(RobotPose pose)
 {
 
@@ -83,18 +88,19 @@ void RobotPoseItem::updatePose(RobotPose pose)
     update();
 }
 
+/// 根据真实尺寸和地图分辨率计算绘制半径与包围盒。
 void RobotPoseItem::updateRobotPixelSize()
 {
     if (map_resolution_ > 0.0) {
-        const double diameter_m = std::max(m_robotActualWidth_m, m_robotActualHeight_m);
-        m_robotRadius_px = std::max(3.0, diameter_m / map_resolution_ / 2.0);
+        m_robotRadius_px = std::max(3.0, m_robotRadius_m / map_resolution_);
     }
 
     const double padding = 3.0;
-    const double halfExtent = m_robotRadius_px + padding;
+    const double halfExtent = m_robotRadius_px * 2.0 + padding;
     m_boundingRect = QRectF(-halfExtent, -halfExtent, halfExtent * 2.0, halfExtent * 2.0);
 }
 
+/// 绘制机器人占地轮廓。
 void RobotPoseItem::drawFootprint(QPainter* painter) const
 {
     const QRectF footprintRect(-m_robotRadius_px,
@@ -107,34 +113,37 @@ void RobotPoseItem::drawFootprint(QPainter* painter) const
     painter->drawEllipse(footprintRect);
 }
 
+/// 绘制机器人中心点。
 void RobotPoseItem::drawCenterJoint(QPainter* painter) const
 {
-    const double radius = std::max(3.0, m_robotRadius_px * 0.18);
+    const double radius = std::min(1.0, m_robotRadius_px * 0.28);
     const QRectF jointRect(-radius, -radius, radius * 2.0, radius * 2.0);
 
-    painter->setPen(QPen(QColor(0, 38, 190, 240), std::max(1.0, m_robotRadius_px * 0.05)));
+    painter->setPen(QPen(QColor(0, 38, 190, 240), 0.8));
     painter->setBrush(QColor(0, 82, 255, 245));
     painter->drawEllipse(jointRect);
 }
 
+/// 绘制机器人局部坐标轴箭头。
 void RobotPoseItem::drawAxisArrow(QPainter* painter,
                                   qreal angle_degrees,
                                   const QColor& fill,
                                   const QColor& border) const
 {
-    const double shaftWidth = std::max(3.0, m_robotRadius_px * 0.18);
-    const double headLength = std::max(4.0, m_robotRadius_px * 0.24);
-    const double axisTip = m_robotRadius_px * 0.82;
+    const double shaftWidth = 1.0;
+    const double headHalfWidth = 1.0;
+    const double headLength = std::max(1.0, m_robotRadius_px * 0.24);
+    const double axisTip = m_robotRadius_px * 2.0;
     const double shaftEnd = axisTip - headLength * 0.65;
-    const double shaftStart = std::max(1.0, m_robotRadius_px * 0.10);
+    const double shaftStart = std::min(1.0, m_robotRadius_px * 0.18);
     const QRectF shaftRect(shaftStart,
                            -shaftWidth / 2.0,
                            shaftEnd - shaftStart,
                            shaftWidth);
     QPolygonF arrowHead;
     arrowHead << QPointF(axisTip, 0.0)
-              << QPointF(shaftEnd, -shaftWidth * 0.82)
-              << QPointF(shaftEnd, shaftWidth * 0.82);
+              << QPointF(shaftEnd, -headHalfWidth)
+              << QPointF(shaftEnd, headHalfWidth);
 
     painter->save();
     painter->rotate(angle_degrees);

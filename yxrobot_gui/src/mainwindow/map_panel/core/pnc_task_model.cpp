@@ -1,33 +1,36 @@
 #include "mainwindow/map_panel/core/pnc_task_model.h"
 
 #include <QDateTime>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
+#include <cmath>
 
 namespace silverstar {
 namespace map_panel {
 
 namespace
 {
+/// 根据前缀和当前毫秒时间生成简单任务 uuid。
 QString makeUuid(const QString& prefix)
 {
     return QStringLiteral("%1-%2").arg(prefix, QString::number(QDateTime::currentMSecsSinceEpoch()));
 }
 
-QJsonArray pointsToJson(const QVector<QPointF>& points)
+/// 将 UI 层 PNC 枚举转换为通用导航 PNC 枚举。
+NavigationPncTaskType toNavigationPncTaskType(PncTaskType type)
 {
-    QJsonArray array;
-    for (const QPointF& point : points) {
-        QJsonObject object;
-        object.insert(QStringLiteral("x"), point.x());
-        object.insert(QStringLiteral("y"), point.y());
-        array.append(object);
+    switch (type) {
+    case PncTaskType::P2P:
+        return NavigationPncTaskType::P2P;
+    case PncTaskType::Coverage:
+        return NavigationPncTaskType::Coverage;
+    case PncTaskType::AlongWall:
+        return NavigationPncTaskType::AlongWall;
     }
-    return array;
+
+    return NavigationPncTaskType::P2P;
 }
 }
 
+/// 返回 PNC 任务类型对应的业务字符串。
 QString pncTaskTypeName(PncTaskType type)
 {
     switch (type) {
@@ -42,32 +45,30 @@ QString pncTaskTypeName(PncTaskType type)
     return QStringLiteral("UNKNOWN");
 }
 
-QString serializeP2PTaskToJson(const QPointF& goal)
+/// 根据 RViz 风格拖拽起点/终点生成点到点目标位姿任务。
+NavigationPncTask makeP2PTask(const QPointF& pressPoint, const QPointF& releasePoint)
 {
-    QJsonObject root;
-    root.insert(QStringLiteral("uuid"), makeUuid(QStringLiteral("p2p")));
-    root.insert(QStringLiteral("type"), pncTaskTypeName(PncTaskType::P2P));
-
-    QJsonObject goalObject;
-    goalObject.insert(QStringLiteral("x"), goal.x());
-    goalObject.insert(QStringLiteral("y"), goal.y());
-    goalObject.insert(QStringLiteral("theta"), 0.0);
-    root.insert(QStringLiteral("goal"), goalObject);
-
-    return QString::fromUtf8(QJsonDocument(root).toJson(QJsonDocument::Compact));
+    NavigationPncTask task;
+    task.uuid = makeUuid(QStringLiteral("p2p")).toStdString();
+    task.type = NavigationPncTaskType::P2P;
+    task.goal = {
+        pressPoint.x(),
+        pressPoint.y(),
+        std::atan2(releasePoint.y() - pressPoint.y(), releasePoint.x() - pressPoint.x())
+    };
+    task.has_goal = true;
+    return task;
 }
 
-QString serializeZoneTaskToJson(PncTaskType type, const EditableZone& zone)
+/// 根据选中区域生成覆盖或沿墙任务。
+NavigationPncTask makeZoneTask(PncTaskType type, const EditableZone& zone)
 {
-    QJsonObject root;
-    root.insert(QStringLiteral("uuid"), makeUuid(type == PncTaskType::Coverage ? QStringLiteral("coverage") : QStringLiteral("alongwall")));
-    root.insert(QStringLiteral("type"), pncTaskTypeName(type));
-    root.insert(QStringLiteral("zone_id"), zone.id);
-    root.insert(QStringLiteral("zone_name"), zone.name);
-    root.insert(QStringLiteral("zone_kind"), zoneKindToProtoName(zone.kind));
-    root.insert(QStringLiteral("points"), pointsToJson(zone.world_points));
-
-    return QString::fromUtf8(QJsonDocument(root).toJson(QJsonDocument::Compact));
+    NavigationPncTask task;
+    task.uuid = makeUuid(type == PncTaskType::Coverage ? QStringLiteral("coverage") : QStringLiteral("alongwall")).toStdString();
+    task.type = toNavigationPncTaskType(type);
+    task.zone = toNavigationZone(zone);
+    task.has_zone = true;
+    return task;
 }
 
 }  // namespace map_panel

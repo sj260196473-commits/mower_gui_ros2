@@ -2,6 +2,7 @@
 
 #include <QApplication>
 
+/// 应用入口：初始化 Qt、注册跨线程消息类型，并显示主窗口。
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
