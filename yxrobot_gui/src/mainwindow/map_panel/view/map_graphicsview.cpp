@@ -315,12 +315,12 @@ void MapGraphicsView::setupZoneEditorOverlay()
     overlay_widget_->addButton("zone.draw.clean_area", "清扫区", "绘制清扫区域");
     overlay_widget_->addButton("zone.draw.no_entry", "禁区", "绘制禁区");
     overlay_widget_->addButton("zone.draw.virtual_wall", "虚拟墙", "绘制虚拟墙");
-    overlay_widget_->addButton("zone.draw.obstacle", "障碍", "绘制障碍物");
-    overlay_widget_->addButton("zone.draw.furniture", "家具", "绘制家具区域");
+    // overlay_widget_->addButton("zone.draw.obstacle", "障碍", "绘制障碍物");
+    // overlay_widget_->addButton("zone.draw.furniture", "家具", "绘制家具区域");
     overlay_widget_->addButton("zone.finish", "完成", "完成当前多边形");
     overlay_widget_->addButton("zone.cancel", "取消", "取消当前绘制");
-    overlay_widget_->addButton("zone.delete", "删除", "删除选中的区域");
-    overlay_widget_->addButton("zone.clear", "清空", "清空所有编辑区域");
+    // overlay_widget_->addButton("zone.delete", "删除", "删除选中的区域");
+    // overlay_widget_->addButton("zone.clear", "清空", "清空所有编辑区域");
     overlay_widget_->setInfoText("Zone editor ready");
 
     connect(overlay_widget_, &MapOverlayWidget::buttonClicked,
@@ -586,12 +586,12 @@ void MapGraphicsView::sendSelectedZoneTask(PncTaskType type)
     }
 
     EditableZone zone;
-    if (!zoneLayer->selectedZone(&zone)) {
-        if (pnc_task_overlay_widget_) {
-            pnc_task_overlay_widget_->setInfoText(QStringLiteral("Ctrl+click a zone first"));
-        }
-        return;
-    }
+    // if (!zoneLayer->selectedZone(&zone)) {
+    //     if (pnc_task_overlay_widget_) {
+    //         pnc_task_overlay_widget_->setInfoText(QStringLiteral("Ctrl+click a zone first"));
+    //     }
+    //     return;
+    // }
 
     channel_->SendPncTask(makeZoneTask(type, zone));
     if (pnc_task_overlay_widget_) {

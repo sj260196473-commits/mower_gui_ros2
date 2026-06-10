@@ -16,6 +16,7 @@
 #include <visualization_msgs/Marker.h>
 #include <tf/transform_listener.h>
 #include <tf/tf.h>
+#include <std_srvs/Trigger.h>
 
 #include "channel/virtual_channel.h"
 
@@ -76,6 +77,10 @@ private:
     ros::Subscriber m_global_path_sub;
     ros::Publisher m_navigation_zone_marker_pub;
     ros::Publisher m_goal_pose_pub;
+
+    ros::ServiceClient m_alongwall_client;
+    ros::ServiceClient m_coverage_client;
+
 
     std::unique_ptr<tf::TransformListener> m_tf_listener;
 

@@ -24,7 +24,7 @@ MapLayerBase* MapDisplayFactory::createDisplay(MapDisplayType type)
     case MapDisplayType::Grid:
         return new GridLayerItem("grid.grid", "Grid", 12);
     case MapDisplayType::RobotPose:
-        return new RobotPoseItem("localization.robot", "Robot Pose", 15);
+        return new RobotPoseItem("localization.robot", "Robot Pose", 35);
     case MapDisplayType::LaserScan:
         return new LaserItem("scan.laser", "Laser Scan", 20);
     case MapDisplayType::GlobalPath:

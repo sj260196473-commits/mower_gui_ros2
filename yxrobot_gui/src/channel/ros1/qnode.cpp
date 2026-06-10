@@ -212,8 +212,11 @@ bool qnode::Start()
             10);
     m_goal_pose_pub =
         m_node_handle->advertise<geometry_msgs::PoseStamped>(
-            "goal_pose",
+            "move_base_simple/goal",
             1);
+
+    m_alongwall_client = m_node_handle->serviceClient<std_srvs::Trigger>("/pnc_task/along_wall_task");
+    m_coverage_client = m_node_handle->serviceClient<std_srvs::Trigger>("/pnc_task/coverage_task");
 
     m_tf_listener = std::make_unique<tf::TransformListener>();
 
@@ -251,22 +254,52 @@ bool qnode::SendNavigationZones(const NavigationZoneCollection& zones)
     return publishZoneMarkers(zones, m_navigation_zone_marker_pub, ros::Time::now());
 }
 
-/// 将 P2P 任务发布为 ROS1 goal_pose 位姿话题。
+/// 根据任务不同类型使用不同方式发布。
 bool qnode::SendPncTask(const NavigationPncTask& task)
 {
-    if (!m_goal_pose_pub || task.type != NavigationPncTaskType::P2P || !task.has_goal) {
+    if (!m_goal_pose_pub) {
         return false;
     }
 
-    geometry_msgs::PoseStamped msg;
-    msg.header.stamp = ros::Time::now();
-    msg.header.frame_id = "map";
-    msg.pose.position.x = task.goal.x;
-    msg.pose.position.y = task.goal.y;
-    msg.pose.position.z = 0.0;
-    msg.pose.orientation = tf::createQuaternionMsgFromYaw(task.goal.yaw);
-    m_goal_pose_pub.publish(msg);
-    return true;
+    switch(task.type)
+    {
+        case NavigationPncTaskType::P2P:
+        {
+            if(task.has_goal)
+            {
+                geometry_msgs::PoseStamped msg;
+                msg.header.stamp = ros::Time::now();
+                msg.header.frame_id = "map";
+                msg.pose.position.x = task.goal.x;
+                msg.pose.position.y = task.goal.y;
+                msg.pose.position.z = 0.0;
+                msg.pose.orientation = tf::createQuaternionMsgFromYaw(task.goal.yaw);
+                m_goal_pose_pub.publish(msg);
+                return true;
+            }
+        }
+        break;
+        case NavigationPncTaskType::AlongWall:
+        {
+            std_srvs::Trigger srv; 
+            m_alongwall_client.call(srv);
+            std::cout<< "alongwall service call!"<<std::endl;
+            return true;
+        }
+        break;
+        case NavigationPncTaskType::Coverage:
+        {
+            std_srvs::Trigger srv; 
+            m_coverage_client.call(srv);
+            std::cout<< "coverage service call!"<<std::endl;
+            return true;
+        }
+        break;
+        default:
+            return false;
+    }
+
+
 }
 
 /// 将 ROS1 OccupancyGrid 转换为内部 OccupancyMap 并发给 UI。

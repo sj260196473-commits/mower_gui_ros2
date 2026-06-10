@@ -25,7 +25,7 @@ public:
     /// 停止具体通信后端，由 ROS1/ROS2 插件实现。
     virtual bool Stop() = 0;
 
-    /// 发送导航区域集合；默认通道不支持发送。
+    /// 发送设置区域集合；默认通道不支持发送。
     virtual bool SendNavigationZones(const NavigationZoneCollection& zones) {
         (void)zones;
         return false;
