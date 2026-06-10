@@ -15,20 +15,27 @@ enum class MapDisplayType
     Grid,
     RobotPose,
     LaserScan,
-    GlobalPath
+    GlobalPath,
+    EditableZones
 };
 
 class MapDisplayFactory : public QObject
 {
     Q_OBJECT
 public:
+    /// 返回地图显示工厂单例，用于集中创建默认图层。
     static MapDisplayFactory *Instance(){
         static MapDisplayFactory *factory = new MapDisplayFactory();
         return factory;
     }
+
+    /// 构造工厂对象，本身不持有图层状态。
     MapDisplayFactory();
 
+    /// 根据图层类型创建一个具体 MapLayerBase 派生对象。
     MapLayerBase* createDisplay(MapDisplayType type);
+
+    /// 创建上位机默认启用的全部地图图层。
     QVector<MapLayerBase*> createDefaultDisplays();
 };
 

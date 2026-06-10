@@ -3,6 +3,7 @@
 namespace silverstar {
 namespace map_panel {
 
+/// 初始化路径图层元信息。
 PathLayerItem::PathLayerItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent)
     : MapLayerBase(id, name, "path", parent)
 {
@@ -10,6 +11,7 @@ PathLayerItem::PathLayerItem(const QString& id,const QString& name,const int& z,
     setAcceptHoverEvents(true);
 }
 
+/// 绘制当前 scene 坐标路径。
 void PathLayerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     Q_UNUSED(option);
@@ -18,12 +20,14 @@ void PathLayerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *opt
     drawPath(painter, current_path_scene_);
 }
 
+/// 返回路径包围盒。
 QRectF PathLayerItem::boundingRect() const
 {
     // Implementation for defining the bounding rectangle
     return bounding_rect_;
 }
 
+/// 根据路径点计算最小外接矩形。
 void PathLayerItem::computeBoundRect(const Path& path)
 {
     if(path.waypoints.empty()) {
@@ -45,6 +49,7 @@ void PathLayerItem::computeBoundRect(const Path& path)
     bounding_rect_ = QRectF(xmin, ymin, xmax - xmin, ymax - ymin);
 }
 
+/// 保存新的世界坐标路径并重建 scene 缓存。
 void PathLayerItem::UpdatePath(const Path& path)
 {
     std::cout<<"update path!"<<path.waypoints.size()<<std::endl;
@@ -54,6 +59,7 @@ void PathLayerItem::UpdatePath(const Path& path)
     update();
 }
 
+/// 更新地图转换器，并用新地图参数重建路径。
 void PathLayerItem::updateMap(const OccupancyMap& map)
 {
     coordinate_transformer_.updateMap(map);
@@ -62,6 +68,7 @@ void PathLayerItem::updateMap(const OccupancyMap& map)
     update();
 }
 
+/// 将世界坐标路径转换为 scene 坐标路径。
 void PathLayerItem::rebuildScenePath()
 {
     current_path_scene_.header = current_path_world_.header;
@@ -81,6 +88,7 @@ void PathLayerItem::rebuildScenePath()
     computeBoundRect(current_path_scene_);
 }
 
+/// 按折线方式绘制路径点序列。
 void PathLayerItem::drawPath(QPainter *painter, const Path& path)
 {
     if(path.waypoints.empty()) return;

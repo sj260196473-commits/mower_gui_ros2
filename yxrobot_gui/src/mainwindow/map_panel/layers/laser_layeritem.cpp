@@ -4,6 +4,7 @@
 namespace silverstar {
 namespace map_panel {
 
+/// 初始化激光图层元信息。
 LaserItem::LaserItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent)
     :MapLayerBase(id,name,"scan",parent)
 {
@@ -11,6 +12,7 @@ LaserItem::LaserItem(const QString& id,const QString& name,const int& z,QGraphic
     setAcceptHoverEvents(true);
 }
 
+/// 遍历所有 scene 坐标激光数据并绘制点云。
 void LaserItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     Q_UNUSED(option);
@@ -20,11 +22,13 @@ void LaserItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
     }
 }
 
+/// 返回激光点云的包围盒。
 QRectF LaserItem::boundingRect() const
 {
     return bounding_rect_;
 }
 
+/// 遍历全部激光点，计算可见点的最小包围矩形。
 void LaserItem::computeBoundRect(const std::map<int, std::vector<Point>> &laser_scan) {
     if (laser_scan.empty()) {
         bounding_rect_ = QRectF();
@@ -62,6 +66,7 @@ void LaserItem::computeBoundRect(const std::map<int, std::vector<Point>> &laser_
 }
 
 
+/// 接收一路激光数据，转换到 scene 坐标并触发重绘。
 void LaserItem::UpdateLaserData(const LaserScan& scan) {
     // std::cout<<"update laser!"<<std::endl;
     laser_data_world_[scan.id] = scan.data;
@@ -72,6 +77,7 @@ void LaserItem::UpdateLaserData(const LaserScan& scan) {
     // std::cout<<"update laserScan!"<<scan.data.size()<<std::endl;
 }
 
+/// 更新地图转换器，并重建所有缓存激光点的 scene 坐标。
 void LaserItem::updateMap(const OccupancyMap& map)
 {
     coordinate_transformer_.updateMap(map);
@@ -80,6 +86,7 @@ void LaserItem::updateMap(const OccupancyMap& map)
     update();
 }
 
+/// 把世界坐标激光点转换为 scene 坐标；地图无效时返回空集合。
 std::vector<Point> LaserItem::convertWorldPointsToScene(const std::vector<Point>& world_points) const
 {
     std::vector<Point> scene_points;
@@ -95,6 +102,7 @@ std::vector<Point> LaserItem::convertWorldPointsToScene(const std::vector<Point>
     return scene_points;
 }
 
+/// 使用当前地图转换参数重建所有激光数据的 scene 缓存。
 void LaserItem::rebuildSceneLaserData()
 {
     laser_data_scene_.clear();
@@ -104,6 +112,7 @@ void LaserItem::rebuildSceneLaserData()
     computeBoundRect(laser_data_scene_);
 }
 
+/// 按激光 id 的固定颜色绘制点集合。
 void LaserItem::drawLaser(QPainter *painter, int id, const std::vector<Point>& data) {
     if (data.empty()) return;
 
@@ -129,6 +138,7 @@ void LaserItem::drawLaser(QPainter *painter, int id, const std::vector<Point>& d
     painter->drawPoints(qpoints.data(), qpoints.size());
 }
 
+/// 将激光 id 映射为稳定颜色，便于区分不同来源。
 QColor LaserItem::Id2Color(int id) {
     // 提取 RGB 颜色的小型 lambda 函数
     auto hexToColor = [](uint32_t hex) {

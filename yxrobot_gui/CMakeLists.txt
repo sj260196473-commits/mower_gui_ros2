@@ -4,7 +4,7 @@ project(yxrobot_gui)
 # 选择通信通道：none / ros1 / ros2 暂时写死
 # set(CHANNEL_OPTION "none" CACHE STRING "Communication channel to build: none or ros2")
 # set_property(CACHE CHANNEL_OPTION PROPERTY STRINGS none ros2)
-set(CHANNEL_OPTION "ros1")
+set(CHANNEL_OPTION "ros2")
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -27,6 +27,7 @@ set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/src/mainwindow/ui)
 
 find_package(Qt5 REQUIRED COMPONENTS Core Widgets)
 find_package(Eigen3 REQUIRED)
+include(CTest)
 
 set(UI_DIR
   src/mainwindow/ui/mainwindow.ui
@@ -44,10 +45,13 @@ set(PRO_INCLUDE_DIR
   src/common/point.h
   src/mainwindow/mainwindow.h
   src/mainwindow/map_panel/core/mapdisplay_factory.h
+  src/mainwindow/map_panel/core/editable_zone_model.h
+  src/mainwindow/map_panel/core/pnc_task_model.h
   src/mainwindow/map_panel/core/map_layer_registry.h
   src/mainwindow/map_panel/core/map_layer_runtime.h
   src/mainwindow/map_panel/core/map_layeritem_virtual.h
   src/mainwindow/map_panel/layers/costmap_layerItem.h
+  src/mainwindow/map_panel/layers/editable_zone_layeritem.h
   src/mainwindow/map_panel/layers/grid_layeritem.h
   src/mainwindow/map_panel/layers/laser_layeritem.h
   src/mainwindow/map_panel/layers/occmap_layerItem.h
@@ -62,10 +66,13 @@ set(PRO_SOURCES_DIR
   src/channel/channel_manager.cpp
   src/mainwindow/mainwindow.cpp
   src/mainwindow/map_panel/core/mapdisplay_factory.cpp
+  src/mainwindow/map_panel/core/editable_zone_model.cpp
+  src/mainwindow/map_panel/core/pnc_task_model.cpp
   src/mainwindow/map_panel/core/map_layer_registry.cpp
   src/mainwindow/map_panel/core/map_layer_runtime.cpp
   src/mainwindow/map_panel/core/map_layerItem_virtual.cpp
   src/mainwindow/map_panel/layers/costmap_layerItem.cpp
+  src/mainwindow/map_panel/layers/editable_zone_layeritem.cpp
   src/mainwindow/map_panel/layers/grid_layeritem.cpp
   src/mainwindow/map_panel/layers/laser_layeritem.cpp
   src/mainwindow/map_panel/layers/occmap_layerItem.cpp
@@ -112,4 +119,51 @@ if(CHANNEL_OPTION STREQUAL "ros2")
   add_subdirectory(src/channel/ros2)
 elseif(CHANNEL_OPTION STREQUAL "ros1")
   add_subdirectory(src/channel/ros1)
+endif()
+
+if(BUILD_TESTING)
+  add_executable(test_editable_zone_model
+    tests/test_editable_zone_model.cpp
+    src/mainwindow/map_panel/core/editable_zone_model.cpp
+  )
+  target_include_directories(test_editable_zone_model PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+  )
+  target_link_libraries(test_editable_zone_model
+    Qt5::Core
+  )
+  add_test(NAME test_editable_zone_model COMMAND test_editable_zone_model)
+
+  add_executable(test_pnc_task_model
+    tests/test_pnc_task_model.cpp
+    src/mainwindow/map_panel/core/pnc_task_model.cpp
+    src/mainwindow/map_panel/core/editable_zone_model.cpp
+  )
+  target_include_directories(test_pnc_task_model PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+  )
+  target_link_libraries(test_pnc_task_model
+    Qt5::Core
+  )
+  add_test(NAME test_pnc_task_model COMMAND test_pnc_task_model)
+
+  qt5_wrap_cpp(TEST_ROBOTPOSE_MOC_HPP
+    src/mainwindow/map_panel/layers/robotpose_layerItem.h
+    src/mainwindow/map_panel/core/map_layeritem_virtual.h
+  )
+  add_executable(test_robotpose_layeritem
+    tests/test_robotpose_layeritem.cpp
+    src/mainwindow/map_panel/layers/robotpose_layerItem.cpp
+    src/mainwindow/map_panel/core/map_layerItem_virtual.cpp
+    ${TEST_ROBOTPOSE_MOC_HPP}
+  )
+  target_include_directories(test_robotpose_layeritem PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${EIGEN3_INCLUDE_DIRS}
+  )
+  target_link_libraries(test_robotpose_layeritem
+    Qt5::Core
+    Qt5::Widgets
+  )
+  add_test(NAME test_robotpose_layeritem COMMAND test_robotpose_layeritem)
 endif()

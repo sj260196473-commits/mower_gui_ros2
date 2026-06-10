@@ -3,6 +3,7 @@
 
 using silverstar::map_panel::MapGraphicsView;
 
+/// 构造主窗口并把通信通道绑定到地图视图。
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -24,11 +25,13 @@ MainWindow::MainWindow(QWidget *parent)
     }
 }
 
+/// 销毁 Qt Designer 生成的 UI 对象。
 MainWindow::~MainWindow()
 {
     delete ui;
 }
 
+/// 初始化状态栏按钮和坐标/网格信息显示。
 void MainWindow::setupStatusBar()
 {
     focusMapButton_ = new QPushButton("Focus Map", this);
@@ -67,6 +70,7 @@ void MainWindow::setupStatusBar()
         &MapGraphicsView::focusMapView);
 }
 
+/// 根据地图视图发出的坐标信号刷新状态栏文本。
 void MainWindow::updateMousePositionStatus(
     const QPointF& scene_pos,
     const QPointF& world_pos,
@@ -92,6 +96,7 @@ void MainWindow::updateMousePositionStatus(
             .arg(scene_pos.y(), 0, 'f', 2));
 }
 
+/// 鼠标离开地图视图时恢复坐标占位文本。
 void MainWindow::clearMousePositionStatus()
 {
     if (!mousePositionLabel_) {
@@ -101,6 +106,7 @@ void MainWindow::clearMousePositionStatus()
     mousePositionLabel_->setText("Scene: -, -    World: -, -");
 }
 
+/// 根据网格长度自动使用米或厘米显示。
 void MainWindow::updateGridCellLengthStatus(double length_m)
 {
     if (!gridCellLengthLabel_) {
@@ -115,6 +121,7 @@ void MainWindow::updateGridCellLengthStatus(double length_m)
     gridCellLengthLabel_->setText(QString("Grid: %1 cm").arg(length_m * 100.0, 0, 'f', 1));
 }
 
+/// 响应右侧隐藏按钮，奇偶点击次数用于切换显示状态。
 void MainWindow::on_hide_right_btn_clicked()
 {
     m_hideRightIndex++;
@@ -124,6 +131,7 @@ void MainWindow::on_hide_right_btn_clicked()
         ui->dockWidget_3->show();
 }
 
+/// 响应左侧隐藏按钮，奇偶点击次数用于切换显示状态。
 void MainWindow::on_hide_left_btn_clicked()
 {
     m_hideLeftIndex++;

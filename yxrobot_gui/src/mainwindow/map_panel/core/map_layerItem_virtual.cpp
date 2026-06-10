@@ -3,6 +3,7 @@
 namespace silverstar {
 namespace map_panel {
 
+/// 初始化图层元信息，实际绘制由派生类实现。
 MapLayerBase::MapLayerBase(const QString& layerId,
                            const QString& layerName,
                            const QString& layerGroup,

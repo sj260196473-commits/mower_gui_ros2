@@ -1,14 +1,177 @@
 #include "rclcomm.h"
 
+#include <cmath>
+#include <functional>
+
+namespace
+{
+/// 判断导航区域是否能用 Marker 表达。
+bool isMarkerZone(const NavigationZone& zone)
+{
+    if (!zone.enabled) {
+        return false;
+    }
+
+    if (zone.kind == NavigationZoneKind::VirtualWall) {
+        return zone.points.size() >= 2;
+    }
+
+    return zone.points.size() >= 3;
+}
+
+/// 返回区域类型对应的 Marker 命名空间。
+std::string markerNamespace(NavigationZoneKind kind)
+{
+    switch (kind) {
+    case NavigationZoneKind::NoEntry:
+        return "no_entry";
+    case NavigationZoneKind::VirtualWall:
+        return "virtual_wall";
+    case NavigationZoneKind::NoMop:
+        return "no_mop";
+    case NavigationZoneKind::NoSweep:
+        return "no_sweep";
+    case NavigationZoneKind::Obstacle:
+        return "obstacle";
+    case NavigationZoneKind::Furniture:
+        return "furniture";
+    case NavigationZoneKind::CleanArea:
+        return "clean_area";
+    }
+
+    return "zone";
+}
+
+/// 返回区域类型对应的 Marker 颜色。
+std_msgs::msg::ColorRGBA markerColor(NavigationZoneKind kind)
+{
+    std_msgs::msg::ColorRGBA color;
+    color.a = 0.95F;
+    switch (kind) {
+    case NavigationZoneKind::NoEntry:
+        color.r = 0.90F;
+        color.g = 0.12F;
+        color.b = 0.12F;
+        break;
+    case NavigationZoneKind::VirtualWall:
+        color.r = 0.95F;
+        color.g = 0.25F;
+        color.b = 0.25F;
+        break;
+    case NavigationZoneKind::NoMop:
+        color.r = 0.10F;
+        color.g = 0.45F;
+        color.b = 1.00F;
+        break;
+    case NavigationZoneKind::NoSweep:
+        color.r = 0.95F;
+        color.g = 0.60F;
+        color.b = 0.10F;
+        break;
+    case NavigationZoneKind::Obstacle:
+        color.r = 0.45F;
+        color.g = 0.25F;
+        color.b = 0.12F;
+        break;
+    case NavigationZoneKind::Furniture:
+        color.r = 0.20F;
+        color.g = 0.65F;
+        color.b = 0.25F;
+        break;
+    case NavigationZoneKind::CleanArea:
+        color.r = 0.10F;
+        color.g = 0.85F;
+        color.b = 0.45F;
+        break;
+    }
+    return color;
+}
+
+/// 将二维导航点追加到 Marker。
+void appendMarkerPoint(visualization_msgs::msg::Marker& marker, const NavigationPoint2D& point)
+{
+    geometry_msgs::msg::Point rosPoint;
+    rosPoint.x = point.x;
+    rosPoint.y = point.y;
+    rosPoint.z = 0.0;
+    marker.points.push_back(rosPoint);
+}
+
+/// 将通用导航区域转换为 ROS2 Marker 消息。
+visualization_msgs::msg::Marker toZoneMarker(
+    const NavigationZone& zone,
+    const rclcpp::Time& stamp)
+{
+    visualization_msgs::msg::Marker marker;
+    marker.header.stamp = stamp;
+    marker.header.frame_id = "map";
+    marker.ns = markerNamespace(zone.kind);
+    marker.id = static_cast<int>(std::hash<std::string>{}(zone.id) & 0x7FFFFFFF);
+    marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    marker.action = visualization_msgs::msg::Marker::ADD;
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = zone.kind == NavigationZoneKind::VirtualWall ? 0.05 : 0.035;
+    marker.color = markerColor(zone.kind);
+    marker.points.reserve(zone.points.size() + 1);
+    for (const NavigationPoint2D& point : zone.points) {
+        appendMarkerPoint(marker, point);
+    }
+    if (zone.kind != NavigationZoneKind::VirtualWall && !zone.points.empty()) {
+        appendMarkerPoint(marker, zone.points.front());
+    }
+    return marker;
+}
+
+/// 发布 DELETEALL，用当前区域集合重建 RViz marker 状态。
+void publishDeleteAllMarkers(
+    const rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr& publisher,
+    const rclcpp::Time& stamp)
+{
+    visualization_msgs::msg::Marker marker;
+    marker.header.stamp = stamp;
+    marker.header.frame_id = "map";
+    marker.action = visualization_msgs::msg::Marker::DELETEALL;
+    publisher->publish(marker);
+}
+
+/// 将区域集合逐个发布为 Marker。
+bool publishZoneMarkers(
+    const NavigationZoneCollection& zones,
+    const rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr& publisher,
+    const rclcpp::Time& stamp)
+{
+    if (!publisher) {
+        return false;
+    }
+
+    publishDeleteAllMarkers(publisher, stamp);
+
+    bool published = false;
+    for (const NavigationZone& zone : zones.zones) {
+        if (!isMarkerZone(zone)) {
+            continue;
+        }
+
+        publisher->publish(toZoneMarker(zone, stamp));
+        published = true;
+    }
+
+    return published || zones.zones.empty();
+}
+}
+
+/// 构造 ROS2 通道对象，实际初始化在 Start 中完成。
 rclcomm::rclcomm() {
     
 }
 
+/// 析构时关闭通道后台线程和 ROS2。
 rclcomm::~rclcomm()
 {
     ShutDown();
 }
 
+/// 初始化 ROS2 节点、订阅器、发布器、执行器和 TF listener。
 bool rclcomm::Start()
 {
     rclcpp::init(0,nullptr);
@@ -38,17 +201,23 @@ bool rclcomm::Start()
         sub1_obt);
 
     laserScan_sub_ = node_->create_subscription<sensor_msgs::msg::LaserScan>(
-        "scan",
+        "lidar_scan",
         20,
         std::bind(&rclcomm::laserScanCallback,this,std::placeholders::_1),
         sub_laser_obt);
 
     global_path_sub_ = node_->create_subscription<nav_msgs::msg::Path>(
-        "plan",
+        "path",
         20,
         std::bind(&rclcomm::globalPathCallback,this,std::placeholders::_1),
         sub1_obt);
 
+    goal_pose_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
+        "move_base_simple/goal",
+        rclcpp::QoS(rclcpp::KeepLast(1)).reliable());
+    navigation_zone_marker_pub_ = node_->create_publisher<visualization_msgs::msg::Marker>(
+        "yxrobot_gui/navigation_zone_markers",
+        rclcpp::QoS(rclcpp::KeepLast(10)).reliable());
 
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(node_->get_clock(), std::chrono::seconds(10));
     transform_listener_ =
@@ -61,6 +230,7 @@ bool rclcomm::Start()
  * @brief rclcomm::Process
  *  ros2执行函数
  */
+/// 单次处理 ROS2 回调，并同步机器人 TF 位姿。
 void rclcomm::Process()
 {
     if(rclcpp::ok())
@@ -70,12 +240,46 @@ void rclcomm::Process()
     }
 }
 
+/// 关闭 ROS2。
 bool rclcomm::Stop()
 {
     rclcpp::shutdown();
     return true;
 }
 
+/// 将全部导航区域发布为 Marker。
+bool rclcomm::SendNavigationZones(const NavigationZoneCollection& zones)
+{
+    if (!node_) {
+        return false;
+    }
+
+    return publishZoneMarkers(zones, navigation_zone_marker_pub_, node_->get_clock()->now());
+}
+
+/// 将 P2P 任务发布为 RViz/Nav2 兼容的 goal_pose 位姿话题。
+bool rclcomm::SendPncTask(const NavigationPncTask& task)
+{
+    if (!goal_pose_pub_ || task.type != NavigationPncTaskType::P2P || !task.has_goal) {
+        return false;
+    }
+
+    geometry_msgs::msg::PoseStamped msg;
+    msg.header.stamp = node_->get_clock()->now();
+    msg.header.frame_id = "map";
+    msg.pose.position.x = task.goal.x;
+    msg.pose.position.y = task.goal.y;
+    msg.pose.position.z = 0.0;
+    msg.pose.orientation.x = 0.0;
+    msg.pose.orientation.y = 0.0;
+    msg.pose.orientation.z = std::sin(task.goal.yaw / 2.0);
+    msg.pose.orientation.w = std::cos(task.goal.yaw / 2.0);
+
+    goal_pose_pub_->publish(msg);
+    return true;
+}
+
+/// 将 ROS2 OccupancyGrid 转换为内部 OccupancyMap 并发给 UI。
 void rclcomm::map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
     // std::cout<<"收到订阅全局地图数据"<<std::endl;
@@ -96,6 +300,7 @@ void rclcomm::map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
     emit emitUpdateMap(m_globalMap);
 }
 
+/// 将 ROS2 全局代价地图转换为内部 OccupancyMap。
 void rclcomm::globalCostMapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
     int width = msg->info.width;
@@ -112,6 +317,7 @@ void rclcomm::globalCostMapCallback(const nav_msgs::msg::OccupancyGrid::SharedPt
     emit emitUpdateGlobalCostMap(m_globalCostMap);
 }
 
+/// 局部代价地图回调占位，当前未向 UI 发送数据。
 void rclcomm::localCostMapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
     int width = msg->info.width;
@@ -128,6 +334,7 @@ void rclcomm::localCostMapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr
     // emit emitUpdateGlobalCostMap(map_image);
 }
 
+/// 将 ROS2 LaserScan 点转换到 map 坐标系并发给 UI。
 void rclcomm::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
 {
     double angle_min = msg->angle_min;
@@ -135,11 +342,11 @@ void rclcomm::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg
     double angle_increment = msg->angle_increment;
 
     try {
-        if (!tf_buffer_->canTransform("map", "base_scan", tf2::TimePointZero, std::chrono::milliseconds(100)))
+        if (!tf_buffer_->canTransform("map", "lidar_link", tf2::TimePointZero, std::chrono::milliseconds(100)))
             return;
 
         geometry_msgs::msg::TransformStamped transform =
-            tf_buffer_->lookupTransform("map", "base_scan", tf2::TimePointZero, std::chrono::milliseconds(100));
+            tf_buffer_->lookupTransform("map", "lidar_link", tf2::TimePointZero, std::chrono::milliseconds(100));
         tf2::Transform tf2_transform;
         tf2::fromMsg(transform.transform, tf2_transform);
         LaserScan laser_points;
@@ -164,6 +371,7 @@ void rclcomm::laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg
     }
 }
 
+/// 将 ROS2 Path 转换为内部 Path 数据结构。
 void rclcomm::globalPathCallback(const nav_msgs::msg::Path::SharedPtr msg)
 {
     Path global_path;
@@ -181,6 +389,7 @@ void rclcomm::globalPathCallback(const nav_msgs::msg::Path::SharedPtr msg)
 
 }
 
+/// 查询 base_link 到 map 的位姿并发出机器人位姿信号。
 void rclcomm::getRobotPose()
 {
     auto pose = getTransform("base_link","map");
@@ -188,6 +397,7 @@ void rclcomm::getRobotPose()
 }
 
 
+/// 从 TF 树中查询 from 到 to 的变换。
 RobotPose rclcomm::getTransform(const std::string& from,const std::string& to)
 {
     RobotPose pose;

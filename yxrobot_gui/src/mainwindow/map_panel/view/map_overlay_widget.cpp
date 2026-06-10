@@ -9,6 +9,7 @@
 namespace silverstar {
 namespace map_panel {
 
+/// 初始化悬浮工具条布局、状态文本和样式。
 MapOverlayWidget::MapOverlayWidget(QWidget* parent)
     : QWidget(parent)
 {
@@ -57,9 +58,9 @@ MapOverlayWidget::MapOverlayWidget(QWidget* parent)
         "  background-color: #333333;"
         "}");
 
-    addButton("overlay.action", "Action", "Overlay action");
 }
 
+/// 创建按钮并把点击事件转换为带 id 的 buttonClicked 信号。
 QPushButton* MapOverlayWidget::addButton(const QString& id, const QString& text, const QString& tooltip)
 {
     auto* button = new QPushButton(text, this);
@@ -74,6 +75,7 @@ QPushButton* MapOverlayWidget::addButton(const QString& id, const QString& text,
     return button;
 }
 
+/// 更新工具条状态文本。
 void MapOverlayWidget::setInfoText(const QString& text)
 {
     info_label_->setText(text);

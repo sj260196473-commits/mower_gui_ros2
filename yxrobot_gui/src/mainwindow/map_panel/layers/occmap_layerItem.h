@@ -10,6 +10,7 @@
 namespace silverstar {
 namespace map_panel {
 
+/// 根据占据概率返回地图像素颜色。
 inline QRgb occMapRgbaForOccupancy(double occupancy)
 {
     if (occupancy > 0) {
@@ -26,13 +27,19 @@ class OccMapItem : public MapLayerBase
 {
     Q_OBJECT
 public:
+    /// 构造占据地图图层并设置 z 值。
     OccMapItem(const QString& id,const QString& name,const int& z,QGraphicsItem* parent = nullptr);
+
+    /// 绘制缓存的占据地图图像。
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = Q_NULLPTR) override;
+
+    /// 返回占据地图图像包围盒。
     QRectF boundingRect() const override;
 
 
 
 public slots:
+    /// 接收占据地图数据并转换为 QImage 缓存。
     void updateMap(const OccupancyMap& img);
 
 private:

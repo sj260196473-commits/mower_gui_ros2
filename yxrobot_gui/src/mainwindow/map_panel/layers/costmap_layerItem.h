@@ -8,6 +8,7 @@
 namespace silverstar {
 namespace map_panel {
 
+/// 根据代价值返回半透明颜色，用于叠加显示全局代价地图。
 inline QRgb costMapRgbaForCost(int cost)
 {
     if (cost >= 100) {
@@ -44,15 +45,20 @@ class CostMapItem : public MapLayerBase
 {
     Q_OBJECT
 public:
+    /// 构造代价地图图层并设置图层元信息和 z 值。
     CostMapItem(const QString& id,
                 const QString& name,
                 const int& z,
                 QGraphicsItem* parent = nullptr);
 
+    /// 绘制缓存好的代价地图图像。
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+
+    /// 返回代价地图图像对应的场景包围盒。
     QRectF boundingRect() const;
 
 public slots:
+    /// 接收代价地图数据并转换为 QImage 缓存。
     void updateMap(const OccupancyMap& map);
 
 private:

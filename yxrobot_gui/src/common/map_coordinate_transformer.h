@@ -6,13 +6,16 @@
 class MapCoordinateTransformer
 {
 public:
+    /// 构造无效转换器，需调用 updateMap 后才能进行坐标转换。
     MapCoordinateTransformer() = default;
 
+    /// 使用地图信息构造转换器，并立即初始化分辨率和原点。
     explicit MapCoordinateTransformer(const OccupancyMap& map)
     {
         updateMap(map);
     }
 
+    /// 根据地图分辨率和原点更新世界坐标与场景坐标的转换参数。
     void updateMap(const OccupancyMap& map)
     {
         valid_ = !map.isNULL() && map.getRes() > 0.0;
@@ -25,11 +28,13 @@ public:
         origin_y_ = map.m_origin[1];
     }
 
+    /// 判断当前转换器是否有有效地图参数。
     bool isValid() const
     {
         return valid_;
     }
 
+    /// 将世界坐标点转换为 QGraphicsScene 使用的场景坐标点。
     Point worldToScene(const Point& world_point) const
     {
         Point scene_point;
@@ -37,6 +42,7 @@ public:
         return scene_point;
     }
 
+    /// 将世界坐标 x/y 转换为场景坐标 x/y。
     void worldToScene(
         const double& world_x,
         const double& world_y,
@@ -47,6 +53,7 @@ public:
         scene_y = (world_y - origin_y_) / resolution_;
     }
 
+    /// 将场景坐标点转换为世界坐标点。
     Point sceneToWorld(const Point& scene_point) const
     {
         Point world_point;
@@ -54,6 +61,7 @@ public:
         return world_point;
     }
 
+    /// 将场景坐标 x/y 转换为世界坐标 x/y。
     void sceneToWorld(
         const double& scene_x,
         const double& scene_y,
