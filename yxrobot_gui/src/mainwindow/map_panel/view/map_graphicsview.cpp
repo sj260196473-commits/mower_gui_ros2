@@ -221,14 +221,25 @@ void MapGraphicsView::scrollContentsBy(int dx, int dy)
 void MapGraphicsView::showLayerContextMenu(const QPoint& global_pos)
 {
     QMenu menu(this);
-    QMenu* layerMenu = menu.addMenu("Layers");
+    QMenu* mapLayerMenu = menu.addMenu("MapLayers");
+    QMenu* pathLayerMenu = menu.addMenu("PathLayers");
+    QMenu* otherLayerMenu = menu.addMenu("OtherLayers");
     auto& registry = layer_runtime_->registry();
 
     for (const MapLayerEntry& layer : registry.layers()) {
         if (!layer.item) {
             continue;
         }
-        QAction* action = layerMenu->addAction(layer.name);
+        QAction* action = nullptr;
+        if(layer.group == "map") {
+            action = mapLayerMenu->addAction(layer.name);
+        }
+        else if(layer.group == "path") {
+            action = pathLayerMenu->addAction(layer.name);
+        }
+        else {
+            action = otherLayerMenu->addAction(layer.name);
+        }
         action->setCheckable(true);
         action->setChecked(registry.isVisible(layer.id));
 
