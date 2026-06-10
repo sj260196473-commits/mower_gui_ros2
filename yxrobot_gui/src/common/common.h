@@ -83,6 +83,9 @@ public:
 
     /// 返回地图分辨率，单位通常为 m/cell。
     double getRes() const {return m_resolution;}
+
+    /// 返回地图原点
+    Eigen::Vector3d getOrigin() const {return m_origin;}
 };
 
 struct LaserScan {
