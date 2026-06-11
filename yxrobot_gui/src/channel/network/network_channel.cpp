@@ -15,6 +15,7 @@
 #include <cstring>
 #include <iostream>
 #include <limits>
+#include <mutex>
 #include <thread>
 #include <vector>
 
@@ -154,6 +155,27 @@ bool NetworkChannel::Start()
 
 void NetworkChannel::Process()
 {
+    bool enabled = false;
+    bool reconnect = false;
+    {
+        std::lock_guard<std::mutex> lock(state_mutex_);
+        enabled = connect_enabled_;
+        reconnect = reconnect_requested_;
+        reconnect_requested_ = false;
+    }
+
+    if (!enabled) {
+        if (connected_) {
+            disconnectFromServer();
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        return;
+    }
+
+    if (reconnect && connected_) {
+        disconnectFromServer();
+    }
+
     if (!connected_ && !connectToServer()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         return;
@@ -175,10 +197,60 @@ bool NetworkChannel::Stop()
     return true;
 }
 
+bool NetworkChannel::SetTelemetryTarget(const QString& host, uint16_t port)
+{
+    const auto trimmed = host.trimmed();
+    if (trimmed.isEmpty() || port == 0) {
+        return false;
+    }
+
+    std::lock_guard<std::mutex> lock(state_mutex_);
+    const std::string next_host = trimmed.toStdString();
+    if (host_ != next_host || port_ != port) {
+        host_ = next_host;
+        port_ = port;
+        reconnect_requested_ = true;
+    }
+    return true;
+}
+
+bool NetworkChannel::ConnectTelemetry()
+{
+    std::lock_guard<std::mutex> lock(state_mutex_);
+    connect_enabled_ = true;
+    reconnect_requested_ = true;
+    return true;
+}
+
+bool NetworkChannel::DisconnectTelemetry()
+{
+    {
+        std::lock_guard<std::mutex> lock(state_mutex_);
+        connect_enabled_ = false;
+        reconnect_requested_ = false;
+    }
+    disconnectFromServer();
+    return true;
+}
+
+bool NetworkChannel::IsTelemetryConnected() const
+{
+    return connected_;
+}
+
 bool NetworkChannel::connectToServer()
 {
+    std::string host;
+    uint16_t port = 0;
+    {
+        std::lock_guard<std::mutex> lock(state_mutex_);
+        host = host_;
+        port = port_;
+    }
+
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) {
+        emitConnectionState(false, QStringLiteral("创建socket失败"));
         return false;
     }
 
@@ -189,15 +261,17 @@ bool NetworkChannel::connectToServer()
 
     sockaddr_in address{};
     address.sin_family = AF_INET;
-    address.sin_port = htons(port_);
-    if (inet_pton(AF_INET, host_.c_str(), &address.sin_addr) != 1) {
+    address.sin_port = htons(port);
+    if (inet_pton(AF_INET, host.c_str(), &address.sin_addr) != 1) {
         close(fd);
+        emitConnectionState(false, QStringLiteral("IP格式错误"));
         return false;
     }
 
     int ret = ::connect(fd, reinterpret_cast<sockaddr*>(&address), sizeof(address));
     if (ret < 0 && errno != EINPROGRESS) {
         close(fd);
+        emitConnectionState(false, QStringLiteral("连接失败"));
         return false;
     }
 
@@ -206,6 +280,7 @@ bool NetworkChannel::connectToServer()
     pfd.events = POLLOUT;
     if (poll(&pfd, 1, 300) <= 0) {
         close(fd);
+        emitConnectionState(false, QStringLiteral("连接超时"));
         return false;
     }
 
@@ -213,6 +288,7 @@ bool NetworkChannel::connectToServer()
     socklen_t error_len = sizeof(error);
     if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &error_len) < 0 || error != 0) {
         close(fd);
+        emitConnectionState(false, QStringLiteral("连接失败"));
         return false;
     }
 
@@ -220,24 +296,24 @@ bool NetworkChannel::connectToServer()
         fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
     }
 
-    timeval timeout{};
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 50000;
-    setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-
     socket_fd_ = fd;
     connected_ = true;
-    std::cout << "connected telemetry server " << host_ << ":" << port_ << std::endl;
+    std::cout << "connected telemetry server " << host << ":" << port << std::endl;
+    emitConnectionState(true, QStringLiteral("已连接"));
     return true;
 }
 
 void NetworkChannel::disconnectFromServer()
 {
+    const bool was_connected = connected_;
     if (socket_fd_ >= 0) {
         close(socket_fd_);
         socket_fd_ = -1;
     }
     connected_ = false;
+    if (was_connected) {
+        emitConnectionState(false, QStringLiteral("未连接"));
+    }
 }
 
 bool NetworkChannel::receiveExact(void* data, size_t size)
@@ -245,13 +321,46 @@ bool NetworkChannel::receiveExact(void* data, size_t size)
     auto* out = static_cast<uint8_t*>(data);
     size_t received = 0;
     while (received < size) {
+        pollfd pfd{};
+        pfd.fd = socket_fd_;
+        pfd.events = POLLIN;
+        const int poll_ret = poll(&pfd, 1, 2000);
+        if (poll_ret == 0) {
+            std::cerr << "telemetry receive timeout" << std::endl;
+            return false;
+        }
+        if (poll_ret < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            std::cerr << "telemetry poll failed: " << std::strerror(errno) << std::endl;
+            return false;
+        }
+        if ((pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) != 0) {
+            std::cerr << "telemetry socket closed, revents=" << pfd.revents << std::endl;
+            return false;
+        }
+        if ((pfd.revents & POLLIN) == 0) {
+            continue;
+        }
+
         const ssize_t ret = recv(socket_fd_, out + received, size - received, 0);
         if (ret > 0) {
             received += static_cast<size_t>(ret);
             continue;
         }
+        if (ret == 0) {
+            std::cerr << "telemetry server closed connection" << std::endl;
+            return false;
+        }
         if (ret < 0 && errno == EINTR) {
             continue;
+        }
+        if (ret < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            continue;
+        }
+        if (ret < 0) {
+            std::cerr << "telemetry recv failed: " << std::strerror(errno) << std::endl;
         }
         return false;
     }
@@ -286,7 +395,10 @@ bool NetworkChannel::receiveFrame(telemetry_protocol::FrameHeader& header, std::
 
 void NetworkChannel::handleFrame(const telemetry_protocol::FrameHeader& header, const std::string& payload)
 {
-    switch (static_cast<telemetry_protocol::FrameTopic>(header.topic)) {
+    const auto topic = static_cast<telemetry_protocol::FrameTopic>(header.topic);
+    updateFrequency(topic);
+
+    switch (topic) {
     case telemetry_protocol::FrameTopic::Map:
         handleMapPayload(payload);
         break;
@@ -299,6 +411,43 @@ void NetworkChannel::handleFrame(const telemetry_protocol::FrameHeader& header, 
     default:
         break;
     }
+}
+
+void NetworkChannel::updateFrequency(telemetry_protocol::FrameTopic topic)
+{
+    switch (topic) {
+    case telemetry_protocol::FrameTopic::Map:
+        ++map_count_;
+        break;
+    case telemetry_protocol::FrameTopic::LaserScan:
+        ++lidar_count_;
+        break;
+    case telemetry_protocol::FrameTopic::RobotPose:
+        ++pose_count_;
+        break;
+    default:
+        return;
+    }
+
+    const auto now = std::chrono::steady_clock::now();
+    const auto elapsed = std::chrono::duration<double>(now - freq_window_start_).count();
+    if (elapsed < 1.0) {
+        return;
+    }
+
+    emit emitTelemetryFrequencyChanged(QStringLiteral("map"), map_count_ / elapsed);
+    emit emitTelemetryFrequencyChanged(QStringLiteral("lidar"), lidar_count_ / elapsed);
+    emit emitTelemetryFrequencyChanged(QStringLiteral("pose"), pose_count_ / elapsed);
+
+    map_count_ = 0;
+    lidar_count_ = 0;
+    pose_count_ = 0;
+    freq_window_start_ = now;
+}
+
+void NetworkChannel::emitConnectionState(bool connected, const QString& message)
+{
+    emit emitTelemetryConnectionChanged(connected, message);
 }
 
 void NetworkChannel::handleMapPayload(const std::string& payload)

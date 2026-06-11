@@ -1,0 +1,30 @@
+syntax = "proto3";
+package silverstar.geometry;
+
+import public "base_proto/common.proto";
+
+message AngleProto {
+  float rad = 1;
+  float deg = 2;
+}
+
+message PointProto {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+
+message NodeProto {
+  int32 row = 1;
+  int32 col = 2;
+}
+
+message PoseProto {
+  PointProto position = 1;
+  AngleProto orientation = 2;
+}
+
+message PoseStampedProto {
+  silverstar.TimeProto stamp = 1;
+  PoseProto pose = 2;
+}

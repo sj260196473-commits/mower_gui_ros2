@@ -125,6 +125,37 @@ elseif(CHANNEL_OPTION STREQUAL "network")
   add_subdirectory(src/channel/network)
 endif()
 
+install(TARGETS ${PROJECT_NAME}
+  RUNTIME DESTINATION .
+)
+
+get_target_property(QT_QMAKE_EXECUTABLE Qt5::qmake IMPORTED_LOCATION)
+if(QT_QMAKE_EXECUTABLE)
+  execute_process(
+    COMMAND ${QT_QMAKE_EXECUTABLE} -query QT_INSTALL_PLUGINS
+    OUTPUT_VARIABLE QT_INSTALL_PLUGINS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  foreach(QT_PLATFORM_PLUGIN libqxcb.so libqoffscreen.so libqminimal.so)
+    set(QT_PLATFORM_PLUGIN_PATH "${QT_INSTALL_PLUGINS}/platforms/${QT_PLATFORM_PLUGIN}")
+    if(EXISTS "${QT_PLATFORM_PLUGIN_PATH}")
+      install(FILES "${QT_PLATFORM_PLUGIN_PATH}" DESTINATION plugins/platforms)
+    endif()
+  endforeach()
+endif()
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/packaging/run_gui.sh.in
+  ${CMAKE_CURRENT_BINARY_DIR}/run.sh
+  @ONLY
+)
+
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/run.sh DESTINATION .)
+install(FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/packaging/qt.conf
+  DESTINATION .
+)
+
 if(BUILD_TESTING)
   add_executable(test_editable_zone_model
     tests/test_editable_zone_model.cpp

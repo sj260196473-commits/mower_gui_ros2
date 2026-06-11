@@ -1,8 +1,39 @@
 set(TARGET_NAME channel_network)
 
-set(ROBOT536_DIR "/home/suj/Desktop/yx_work/mstf/modules/robot536" CACHE PATH "robot536 source directory")
-
 find_package(Protobuf REQUIRED)
+
+set(NETWORK_PROTO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/proto)
+set(NETWORK_PROTO_FILES
+  base_proto/common.proto
+  base_proto/geometry.proto
+  base_proto/map.proto
+  sensor_proto/smart_sensors.proto
+)
+
+set(NETWORK_PROTO_SRCS)
+set(NETWORK_PROTO_HDRS)
+foreach(PROTO_FILE ${NETWORK_PROTO_FILES})
+  get_filename_component(PROTO_DIR ${PROTO_FILE} DIRECTORY)
+  get_filename_component(PROTO_NAME ${PROTO_FILE} NAME_WE)
+  set(PROTO_SRC ${CMAKE_CURRENT_BINARY_DIR}/${PROTO_DIR}/${PROTO_NAME}.pb.cc)
+  set(PROTO_HDR ${CMAKE_CURRENT_BINARY_DIR}/${PROTO_DIR}/${PROTO_NAME}.pb.h)
+  add_custom_command(
+    OUTPUT ${PROTO_SRC} ${PROTO_HDR}
+    COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+      --proto_path=${NETWORK_PROTO_DIR}
+      --cpp_out=${CMAKE_CURRENT_BINARY_DIR}
+      ${NETWORK_PROTO_DIR}/${PROTO_FILE}
+    DEPENDS ${NETWORK_PROTO_DIR}/${PROTO_FILE}
+    COMMENT "Running cpp protocol buffer compiler on ${PROTO_FILE}"
+    VERBATIM
+  )
+  list(APPEND NETWORK_PROTO_SRCS ${PROTO_SRC})
+  list(APPEND NETWORK_PROTO_HDRS ${PROTO_HDR})
+endforeach()
+
+set_source_files_properties(${NETWORK_PROTO_SRCS} ${NETWORK_PROTO_HDRS}
+  PROPERTIES SKIP_AUTOGEN ON
+)
 
 add_library(${TARGET_NAME} SHARED
   network_channel.cpp
@@ -10,6 +41,8 @@ add_library(${TARGET_NAME} SHARED
   telemetry_protocol.h
   channel_symbol.cpp
   ../virtual_channel.h
+  ${NETWORK_PROTO_SRCS}
+  ${NETWORK_PROTO_HDRS}
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES
@@ -20,14 +53,16 @@ set_target_properties(${TARGET_NAME} PROPERTIES
 target_include_directories(${TARGET_NAME}
   PUBLIC
     ${CMAKE_SOURCE_DIR}/src
-    ${ROBOT536_DIR}/common/proto_cxx
-    ${ROBOT536_DIR}/common/proto_cxx/base_proto
-    ${ROBOT536_DIR}/common/proto_cxx/sensor_proto
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}/proto
 )
 
 target_link_libraries(${TARGET_NAME}
   Qt5::Core
   Threads::Threads
-  ${ROBOT536_DIR}/build/common/proto/libsilverstar_proto.a
   ${Protobuf_LIBRARIES}
+)
+
+install(TARGETS ${TARGET_NAME}
+  LIBRARY DESTINATION lib/network
 )

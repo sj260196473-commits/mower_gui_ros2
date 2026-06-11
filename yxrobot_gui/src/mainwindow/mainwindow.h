@@ -44,6 +44,12 @@ private:
     /// 清空鼠标坐标显示。
     void clearMousePositionStatus();
 
+    /// 连接网络遥测控制面板和通信通道。
+    void setupTelemetryPanel(VirtualChannel* channel);
+
+    /// 重置遥测频率显示。
+    void resetTelemetryFrequencyDisplay();
+
     Ui::MainWindow *ui;
     std::unique_ptr<ChannelManager> channelManager_;
     QPushButton* focusMapButton_{nullptr};

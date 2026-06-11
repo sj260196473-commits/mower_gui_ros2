@@ -1,0 +1,49 @@
+syntax = "proto3";
+package silverstar.map;
+
+import "base_proto/geometry.proto";
+
+enum MapMetaDataProto {
+  FREE = 0;
+  OCCUPIED = 1;
+  UNKNOWN = 2;
+  CLEANED = 3;
+  AREA_BOUNDARY = 4;
+  ALONG_WALL_FOOTPRINT = 5;
+  AROUND_OBS_FOOTPRINT = 6;
+  STATION = 7;
+  STATIC_OBS = 8;
+  DYNAMIC_OBS = 9;
+  BUMP = 10;
+  CLIFF = 11;
+  VIRTUAL_WALL = 12;
+  NO_ENTRY_ZONE = 13;
+  NO_MOP_ZONE = 14;
+  NO_SWEEP_ZONE = 15;
+  BLOCKED_ZONE = 16;
+  TROUBLE = 17;
+  UNREACHABLE_AREA = 18;
+  EXPANDED_OBS = 19;
+  ROBOT_POSITION = 20;
+  GOAL_POSITION = 21;
+  STEP = 22;
+  NAV_PATH = 23;
+  CARPET = 24;
+  NO_CROSSING_ZONE = 25;
+}
+
+message OccupancyGridProto {
+  message MapInfo {
+    float resolution = 1;
+    uint32 width = 2;
+    uint32 height = 3;
+    silverstar.geometry.PointProto origin = 4;
+    silverstar.geometry.NodeProto node_origin = 5;
+  }
+
+  silverstar.TimeProto stamp = 1;
+  MapInfo info = 2;
+  bytes data = 3;
+  string frame_id = 4;
+  string id = 5;
+}
