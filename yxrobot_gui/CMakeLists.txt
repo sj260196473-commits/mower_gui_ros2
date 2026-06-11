@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(yxrobot_gui)
 
 # 选择通信通道：none / ros1 / ros2 / network
-set(CHANNEL_OPTION "network" CACHE STRING "Communication channel to build: none, ros1, ros2 or network")
+set(CHANNEL_OPTION "ros1" CACHE STRING "Communication channel to build: none, ros1, ros2 or network")
 set_property(CACHE CHANNEL_OPTION PROPERTY STRINGS none ros1 ros2 network)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -132,6 +132,7 @@ if(BUILD_TESTING)
   )
   target_include_directories(test_editable_zone_model PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${EIGEN3_INCLUDE_DIRS}
   )
   target_link_libraries(test_editable_zone_model
     Qt5::Core
@@ -145,6 +146,7 @@ if(BUILD_TESTING)
   )
   target_include_directories(test_pnc_task_model PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${EIGEN3_INCLUDE_DIRS}
   )
   target_link_libraries(test_pnc_task_model
     Qt5::Core
