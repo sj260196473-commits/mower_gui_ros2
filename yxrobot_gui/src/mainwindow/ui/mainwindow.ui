@@ -204,7 +204,7 @@
    <property name="minimumSize">
     <size>
      <width>300</width>
-     <height>86</height>
+     <height>396</height>
     </size>
    </property>
    <attribute name="dockWidgetArea">
@@ -221,43 +221,190 @@
         <attribute name="title">
          <string>Tab1</string>
         </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_11">
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_10">
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_10">
+             <item>
+              <widget class="QLabel" name="label_6">
+               <property name="text">
+                <string>模式</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="sim_mode">
+               <item>
+                <property name="text">
+                 <string>ROS</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>网络</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox">
+             <property name="title">
+              <string/>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_8">
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_7">
+                <item>
+                 <widget class="QLabel" name="label">
+                  <property name="text">
+                   <string>机器IP：</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_5">
+                  <item>
+                   <widget class="QLineEdit" name="robotIp_LineEdit">
+                    <property name="text">
+                     <string>127.0.0.1</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="connect_btn">
+                    <property name="text">
+                     <string>连接</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_9" stretch="1,1">
+                  <item>
+                   <widget class="QLabel" name="label_5">
+                    <property name="text">
+                     <string>连接状态:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="connect_status">
+                    <property name="text">
+                     <string>未连接</string>
+                    </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox_2">
+             <property name="title">
+              <string>数据频率</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_9">
+              <item>
+               <layout class="QVBoxLayout" name="verticalLayout_6">
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_6">
+                  <item>
+                   <widget class="QLabel" name="label_2">
+                    <property name="text">
+                     <string>定位数据</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="pose_freq">
+                    <property name="text">
+                     <string>0</string>
+                    </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_7">
+                  <item>
+                   <widget class="QLabel" name="label_3">
+                    <property name="text">
+                     <string>全局地图</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="globalMap_freq">
+                    <property name="text">
+                     <string>0</string>
+                    </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_8">
+                  <item>
+                   <widget class="QLabel" name="label_4">
+                    <property name="text">
+                     <string>雷达数据</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="lidar_freq">
+                    <property name="text">
+                     <string>0</string>
+                    </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
        </widget>
        <widget class="QWidget" name="tab">
         <attribute name="title">
          <string>Tab2</string>
         </attribute>
-        <widget class="QCheckBox" name="map_checkbox">
-         <property name="geometry">
-          <rect>
-           <x>70</x>
-           <y>90</y>
-           <width>91</width>
-           <height>22</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>map</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-        <widget class="QCheckBox" name="robot_checkbox">
-         <property name="geometry">
-          <rect>
-           <x>80</x>
-           <y>130</y>
-           <width>91</width>
-           <height>22</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>robot</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
        </widget>
        <widget class="QWidget" name="tab_9">
         <attribute name="title">

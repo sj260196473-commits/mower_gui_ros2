@@ -1,0 +1,27 @@
+syntax = "proto3";
+package silverstar.smart_sensor;
+
+import "base_proto/common.proto";
+import "base_proto/geometry.proto";
+
+message LaserScanProto {
+  message ScanData {
+    float range = 1;
+    silverstar.geometry.AngleProto angle = 2;
+    float intensities = 3;
+  }
+
+  message LaserInfo {
+    silverstar.geometry.AngleProto min_angle = 1;
+    silverstar.geometry.AngleProto max_angle = 2;
+    silverstar.geometry.AngleProto angle_increment = 3;
+    float range_min = 4;
+    float range_max = 5;
+    float scan_time = 6;
+  }
+
+  silverstar.TimeProto stamp = 1;
+  string frame_id = 2;
+  LaserInfo laser_info = 3;
+  repeated ScanData data = 4;
+}

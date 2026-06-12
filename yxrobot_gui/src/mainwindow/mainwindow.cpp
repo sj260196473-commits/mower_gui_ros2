@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <cstdlib>
+
 using silverstar::map_panel::MapGraphicsView;
 
 /// 构造主窗口并把通信通道绑定到地图视图。
@@ -17,11 +19,15 @@ MainWindow::MainWindow(QWidget *parent)
     auto channel = channelManager_->getChannel();
     if (channel) {
         ui->graphicsView->setCommChannel(channel);
+        setupTelemetryPanel(channel);
 
         if (!channel->Init()) {
             std::cerr << "Failed to initialize channel" << std::endl;
             return;
         }
+    } else {
+        ui->connect_btn->setEnabled(false);
+        ui->connect_status->setText("通道不可用");
     }
 }
 
@@ -119,6 +125,71 @@ void MainWindow::updateGridCellLengthStatus(double length_m)
     }
 
     gridCellLengthLabel_->setText(QString("Grid: %1 cm").arg(length_m * 100.0, 0, 'f', 1));
+}
+
+void MainWindow::setupTelemetryPanel(VirtualChannel* channel)
+{
+    const char* env_host = std::getenv("YX_TELEMETRY_HOST");
+    if (env_host != nullptr && env_host[0] != '\0') {
+        ui->robotIp_LineEdit->setText(QString::fromUtf8(env_host));
+    }
+
+    ui->connect_status->setText("未连接");
+    ui->connect_btn->setText("连接");
+    resetTelemetryFrequencyDisplay();
+
+    connect(ui->connect_btn, &QPushButton::clicked, this, [this, channel]() {
+        if (channel->IsTelemetryConnected()) {
+            channel->DisconnectTelemetry();
+            ui->connect_btn->setText("连接");
+            ui->connect_status->setText("未连接");
+            resetTelemetryFrequencyDisplay();
+            return;
+        }
+
+        const QString host = ui->robotIp_LineEdit->text().trimmed();
+        if (host.isEmpty()) {
+            ui->connect_status->setText("IP为空");
+            return;
+        }
+
+        if (!channel->SetTelemetryTarget(host, 11086)) {
+            ui->connect_status->setText("IP无效");
+            return;
+        }
+
+        ui->connect_status->setText("连接中");
+        ui->connect_btn->setText("断开");
+        channel->ConnectTelemetry();
+    });
+
+    connect(channel, &VirtualChannel::emitTelemetryConnectionChanged, this,
+            [this](bool connected, const QString& message) {
+        ui->connect_status->setText(message);
+        ui->connect_btn->setText(connected ? "断开" : "连接");
+        if (!connected) {
+            resetTelemetryFrequencyDisplay();
+        }
+    });
+
+    connect(channel, &VirtualChannel::emitTelemetryFrequencyChanged, this,
+            [this](const QString& topic, double hz) {
+        const QString text = QString::number(hz, 'f', 1);
+        if (topic == QStringLiteral("pose")) {
+            ui->pose_freq->setText(text);
+        } else if (topic == QStringLiteral("map")) {
+            ui->globalMap_freq->setText(text);
+        } else if (topic == QStringLiteral("lidar")) {
+            ui->lidar_freq->setText(text);
+        }
+    });
+}
+
+void MainWindow::resetTelemetryFrequencyDisplay()
+{
+    ui->pose_freq->setText("0");
+    ui->globalMap_freq->setText("0");
+    ui->lidar_freq->setText("0");
 }
 
 /// 响应右侧隐藏按钮，奇偶点击次数用于切换显示状态。

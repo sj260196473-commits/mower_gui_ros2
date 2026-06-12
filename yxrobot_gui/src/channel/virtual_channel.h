@@ -1,6 +1,8 @@
 #ifndef VIRTUAL_CHANNEL_H
 #define VIRTUAL_CHANNEL_H
 #include <QObject>
+#include <QString>
+#include <algorithm>
 #include <thread>
 #include <atomic>
 #include <iostream>
@@ -37,6 +39,33 @@ public:
         return false;
     }
 
+    /// 设置网络遥测目标；非网络通道默认不支持。
+    virtual bool SetTelemetryTarget(const QString& host, uint16_t port) {
+        (void)host;
+        (void)port;
+        return false;
+    }
+
+    /// 请求建立网络遥测连接；非网络通道默认不支持。
+    virtual bool ConnectTelemetry() {
+        return false;
+    }
+
+    /// 请求断开网络遥测连接；非网络通道默认不支持。
+    virtual bool DisconnectTelemetry() {
+        return false;
+    }
+
+    /// 查询网络遥测连接状态；非网络通道默认未连接。
+    virtual bool IsTelemetryConnected() const {
+        return false;
+    }
+
+    /// 通道后台处理线程频率；普通通道默认 30Hz，网络通道可提高以降低队列延迟。
+    virtual int LoopRateHz() const {
+        return 30;
+    }
+
 
     /// 初始化通道并启动后台处理线程。
     bool Init() {
@@ -51,8 +80,9 @@ public:
             process_thread_ = std::thread([this]() {
                 while (run_flag_) {
                     Process();
+                    const int loop_rate = std::max(1, LoopRateHz());
                     std::this_thread::sleep_for(
-                        std::chrono::milliseconds(1000 / loop_rate_));
+                        std::chrono::milliseconds(1000 / loop_rate));
                 }
             });
             return true;
@@ -89,6 +119,11 @@ signals:
     /// 通知 UI 更新路径数据。
     void emitUpdatePath(const Path& path);
 
+    /// 通知 UI 网络遥测连接状态变化。
+    void emitTelemetryConnectionChanged(bool connected, const QString& message);
+
+    /// 通知 UI 某类遥测数据接收频率变化，单位 Hz。
+    void emitTelemetryFrequencyChanged(const QString& topic, double hz);
 
 private:
     std::thread process_thread_;
